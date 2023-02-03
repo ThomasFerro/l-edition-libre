@@ -5,27 +5,37 @@ import (
 
 	"github.com/ThomasFerro/l-edition-libre/commands"
 	"github.com/ThomasFerro/l-edition-libre/domain"
+	"github.com/ThomasFerro/l-edition-libre/events"
 	"github.com/ThomasFerro/l-edition-libre/queries"
 	"github.com/go-bdd/gobdd"
 )
 
+// TODO: Passer par l'API et non directement les commandes
+
 func sumbitManuscript(t gobdd.StepTest, ctx gobdd.Context, manuscriptName string) {
 	application := testContext.GetApp(ctx)
 
-	err := application.Send(commands.SubmitManuscript{
+	returnedEvents, err := application.Send(commands.SubmitManuscript{
 		ManuscriptName: manuscriptName,
 	})
 	if err != nil {
 		t.Errorf("unable to submit the manuscript: %v", err)
 	}
+	// TODO: Ne plus se baser sur les events retournées mais sur le retour de l'API HTTP
+	for _, nextEvent := range returnedEvents {
+		manuscriptSubmittedEvent, foundExpectedEvent := nextEvent.(events.ManuscriptSubmitted)
+		if foundExpectedEvent {
+			testContext.SetManuscriptID(ctx, manuscriptName, manuscriptSubmittedEvent.CreatedManuscriptID)
+		}
+	}
 }
 
 func cancelManuscriptSubmission(t gobdd.StepTest, ctx gobdd.Context, manuscriptName string) {
 	application := testContext.GetApp(ctx)
+	manuscriptID := testContext.GetManuscriptID(ctx, manuscriptName)
 
-	// TODO: Se baser sur un ID généré à la step d'avant
-	err := application.Send(commands.CancelManuscriptSubmission{
-		ManuscriptName: manuscriptName,
+	_, err := application.Send(commands.CancelManuscriptSubmission{
+		ManuscriptID: manuscriptID,
 	})
 	if err != nil {
 		t.Errorf("unable to cancel the manuscript's submission: %v", err)
@@ -34,10 +44,10 @@ func cancelManuscriptSubmission(t gobdd.StepTest, ctx gobdd.Context, manuscriptN
 
 func shouldBePendingReview(t gobdd.StepTest, ctx gobdd.Context, manuscriptName string) {
 	application := testContext.GetApp(ctx)
+	manuscriptID := testContext.GetManuscriptID(ctx, manuscriptName)
 
-	// TODO: Se baser sur un ID généré à la step d'avant
 	manuscriptStatus, err := application.Query(queries.ManuscriptStatus{
-		ManuscriptName: manuscriptName,
+		ManuscriptID: manuscriptID,
 	})
 
 	if err != nil {
@@ -50,10 +60,10 @@ func shouldBePendingReview(t gobdd.StepTest, ctx gobdd.Context, manuscriptName s
 
 func shouldBeCanceled(t gobdd.StepTest, ctx gobdd.Context, manuscriptName string) {
 	application := testContext.GetApp(ctx)
+	manuscriptID := testContext.GetManuscriptID(ctx, manuscriptName)
 
-	// TODO: Se baser sur un ID généré à la step d'avant
 	manuscriptStatus, err := application.Query(queries.ManuscriptStatus{
-		ManuscriptName: manuscriptName,
+		ManuscriptID: manuscriptID,
 	})
 
 	if err != nil {

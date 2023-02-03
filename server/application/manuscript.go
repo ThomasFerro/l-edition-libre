@@ -1,10 +1,10 @@
 package application
 
-import "github.com/ThomasFerro/l-edition-libre/domain"
-
-// TODO: UUID / GUID ?
-type ManuscriptID string
+import (
+	"github.com/ThomasFerro/l-edition-libre/domain"
+	"github.com/ThomasFerro/l-edition-libre/events"
+)
 
 type Manuscripts interface {
-	Persists(ManuscriptID, domain.Manuscript) error
+	Persists(events.ManuscriptID, domain.Manuscript) error
 }

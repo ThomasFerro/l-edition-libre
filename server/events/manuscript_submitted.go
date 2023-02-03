@@ -1,3 +1,5 @@
 package events
 
-type ManuscriptSubmitted struct{}
+type ManuscriptSubmitted struct {
+	CreatedManuscriptID ManuscriptID
+}

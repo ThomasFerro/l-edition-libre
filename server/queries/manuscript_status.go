@@ -6,8 +6,8 @@ import (
 )
 
 type ManuscriptStatus struct {
-	// TODO: ID ?
-	ManuscriptName string
+	// TODO: L'ID devrait être géré un cran au-dessus, et on ne reçoit que les event de cet ID
+	events.ManuscriptID
 }
 
 func GetManuscriptStatus(history []events.Event, query ManuscriptStatus) (domain.Status, error) {

@@ -9,21 +9,21 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// TODO: Interfacer
+// TODO: Interfacer ?
 type Application struct {
 	history []events.Event
 }
 
-// TODO: repasser Application en immutable
-func (app *Application) manageCommandReturn(newEvents []events.Event, err error) error {
+// TODO: repasser Application en immutable après avoir persisté les évènements ailleurs
+func (app *Application) manageCommandReturn(newEvents []events.Event, err error) ([]events.Event, error) {
 	if err != nil {
-		return err
+		return nil, err
 	}
 	app.history = append(app.history, newEvents...)
-	return nil
+	return newEvents, nil
 }
 
-func (app *Application) Send(command commands.Command) error {
+func (app *Application) Send(command commands.Command) ([]events.Event, error) {
 	slog.Info("receiving command", "command", command)
 	switch typedCommand := command.(type) {
 	case commands.SubmitManuscript:
@@ -31,7 +31,7 @@ func (app *Application) Send(command commands.Command) error {
 	case commands.CancelManuscriptSubmission:
 		return app.manageCommandReturn(commands.HandleCancelManuscriptSubmission(typedCommand))
 	default:
-		return fmt.Errorf("unmanaged command type %T", command)
+		return nil, fmt.Errorf("unmanaged command type %T", command)
 	}
 }
 
