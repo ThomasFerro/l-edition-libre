@@ -12,8 +12,8 @@ import (
 )
 
 func TestScenarios(t *testing.T) {
-	app := application.NewApplication()
 	suite := gobdd.NewSuite(t, gobdd.WithBeforeScenario(func(ctx context.Context) {
+		app := application.NewApplication()
 		ctx.Set(testContext.AppKey{}, &app)
 	}))
 
