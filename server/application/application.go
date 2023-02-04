@@ -24,7 +24,7 @@ func (app *Application) manageCommandReturn(newEvents []events.Event, err error)
 }
 
 func (app *Application) Send(command commands.Command) ([]events.Event, error) {
-	slog.Info("receiving command", "command", command)
+	slog.Info("receiving command", "type", fmt.Sprintf("%T", command), "command", command)
 	switch typedCommand := command.(type) {
 	case commands.SubmitManuscript:
 		return app.manageCommandReturn(commands.HandleSubmitManuscript(typedCommand))

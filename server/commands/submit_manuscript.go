@@ -1,6 +1,10 @@
 package commands
 
-import "github.com/ThomasFerro/l-edition-libre/events"
+import (
+	"fmt"
+
+	"github.com/ThomasFerro/l-edition-libre/events"
+)
 
 type SubmitManuscript struct {
 	ManuscriptName string
@@ -8,6 +12,12 @@ type SubmitManuscript struct {
 
 func HandleSubmitManuscript(command SubmitManuscript) ([]events.Event, error) {
 	return []events.Event{
-		events.ManuscriptSubmitted{},
+		events.ManuscriptSubmitted{
+			CreatedManuscriptID: "todo",
+		},
 	}, nil
+}
+
+func (c SubmitManuscript) String() string {
+	return fmt.Sprintf("SubmitManuscript{ManuscriptName %v}", c.ManuscriptName)
 }

@@ -2,76 +2,101 @@ package steps
 
 import (
 	testContext "acceptance-tests/test-context"
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
 
-	"github.com/ThomasFerro/l-edition-libre/commands"
+	"github.com/ThomasFerro/l-edition-libre/api"
 	"github.com/ThomasFerro/l-edition-libre/domain"
 	"github.com/ThomasFerro/l-edition-libre/events"
-	"github.com/ThomasFerro/l-edition-libre/queries"
 	"github.com/go-bdd/gobdd"
 )
 
-// TODO: Passer par l'API et non directement les commandes
+type submitManuscriptRequest struct {
+	ManuscriptName string `json:"manuscript_name"`
+}
+type submitManuscriptResponse struct {
+	Id string `json:"id"`
+}
 
 func sumbitManuscript(t gobdd.StepTest, ctx gobdd.Context, manuscriptName string) {
-	application := testContext.GetApp(ctx)
-
-	returnedEvents, err := application.Send(commands.SubmitManuscript{
+	marshalled, err := json.Marshal(submitManuscriptRequest{
 		ManuscriptName: manuscriptName,
 	})
 	if err != nil {
-		t.Errorf("unable to submit the manuscript: %v", err)
+		t.Fatalf("unable to marshal the manuscript submission command: %v", err)
 	}
-	// TODO: Ne plus se baser sur les events retournées mais sur le retour de l'API HTTP
-	for _, nextEvent := range returnedEvents {
-		manuscriptSubmittedEvent, foundExpectedEvent := nextEvent.(events.ManuscriptSubmitted)
-		if foundExpectedEvent {
-			testContext.SetManuscriptID(ctx, manuscriptName, manuscriptSubmittedEvent.CreatedManuscriptID)
-		}
+
+	resp, err := http.Post("http://localhost:8080/api/manuscripts", "application/json", bytes.NewReader(marshalled))
+	if err != nil {
+		t.Fatalf("unable to submit the manuscript - post error: %v", err)
 	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		t.Fatalf("unable to submit the manuscript - wrong response code: %v", resp.StatusCode)
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("unable to submit the manuscript - body read error: %v", err)
+	}
+	var newManuscript submitManuscriptResponse
+	err = json.Unmarshal(body, &newManuscript)
+	if err != nil {
+		t.Fatalf("unable to submit the manuscript - body unmarshal error: %v (body: %v)", err, string(body))
+	}
+	testContext.SetManuscriptID(ctx, manuscriptName, events.ManuscriptID(newManuscript.Id))
 }
 
 func cancelManuscriptSubmission(t gobdd.StepTest, ctx gobdd.Context, manuscriptName string) {
-	application := testContext.GetApp(ctx)
 	manuscriptID := testContext.GetManuscriptID(ctx, manuscriptName)
-
-	_, err := application.Send(commands.CancelManuscriptSubmission{
-		ManuscriptID: manuscriptID,
-	})
+	url := fmt.Sprintf("http://localhost:8080/api/manuscripts/%v/cancel-submission", manuscriptID)
+	resp, err := http.Post(url, "application/json", nil)
 	if err != nil {
-		t.Errorf("unable to cancel the manuscript's submission: %v", err)
+		t.Fatalf("unable to cancel manuscript submission - post error: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 400 {
+		t.Fatalf("unable to cancel manuscript submission - wrong response code: %v", resp.StatusCode)
+	}
+}
+
+func manuscriptStatusShouldBe(t gobdd.StepTest, ctx gobdd.Context, manuscriptName string, expectedStatus domain.Status) {
+	manuscriptID := testContext.GetManuscriptID(ctx, manuscriptName)
+	url := fmt.Sprintf("http://localhost:8080/api/manuscripts/%v", manuscriptID)
+	response, err := http.Get(url)
+
+	if err != nil {
+		t.Fatalf("unable to get manuscript's status: %v", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != 200 {
+		t.Fatalf("unable to get manuscript's status - wrong response code: %v", response.StatusCode)
+	}
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		t.Fatalf("unable to get manuscript's status - body read error: %v", err)
+	}
+
+	var manuscript api.ManuscriptDto
+	err = json.Unmarshal(body, &manuscript)
+	if err != nil {
+		t.Fatalf("unable to get manuscript's status - body unmarshal error: %v", err)
+	}
+
+	if manuscript.Status != string(expectedStatus) {
+		t.Fatalf("manuscript should be pending review instead of %v", manuscript.Status)
 	}
 }
 
 func shouldBePendingReview(t gobdd.StepTest, ctx gobdd.Context, manuscriptName string) {
-	application := testContext.GetApp(ctx)
-	manuscriptID := testContext.GetManuscriptID(ctx, manuscriptName)
-
-	manuscriptStatus, err := application.Query(queries.ManuscriptStatus{
-		ManuscriptID: manuscriptID,
-	})
-
-	if err != nil {
-		t.Errorf("unable to get manuscript's status: %v", err)
-	}
-	if manuscriptStatus != domain.PendingReview {
-		t.Errorf("manuscript should be pending review instead of %v", manuscriptStatus)
-	}
+	manuscriptStatusShouldBe(t, ctx, manuscriptName, domain.PendingReview)
 }
 
 func shouldBeCanceled(t gobdd.StepTest, ctx gobdd.Context, manuscriptName string) {
-	application := testContext.GetApp(ctx)
-	manuscriptID := testContext.GetManuscriptID(ctx, manuscriptName)
-
-	manuscriptStatus, err := application.Query(queries.ManuscriptStatus{
-		ManuscriptID: manuscriptID,
-	})
-
-	if err != nil {
-		t.Errorf("unable to get manuscript's status: %v", err)
-	}
-	if manuscriptStatus != domain.Canceled {
-		t.Errorf("manuscript should be canceled review instead of %v", manuscriptStatus)
-	}
+	manuscriptStatusShouldBe(t, ctx, manuscriptName, domain.Canceled)
 }
 
 func ManuscriptSteps(suite *gobdd.Suite) {
