@@ -3,7 +3,7 @@ package steps
 import "github.com/go-bdd/gobdd"
 
 func authentifyAsWriter(t gobdd.StepTest, ctx gobdd.Context) {
-	// TODO
+	// TODO: créer un nouveau writer et s'authentifier avec
 }
 
 func AuthenticationSteps(suite *gobdd.Suite) {

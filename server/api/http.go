@@ -125,7 +125,20 @@ func handleManuscript(w http.ResponseWriter, r *http.Request) {
 
 func manageError(w *http.ResponseWriter, err error) {
 	(*w).WriteHeader(http.StatusInternalServerError)
-	(*w).Write([]byte(err.Error()))
+	typedCommandError, isCommandError := err.(commands.CommandError)
+	if isCommandError {
+		(*w).Write(
+			[]byte(
+				fmt.Sprintf("{\"error\": \"%v\"}", typedCommandError.Name()),
+			),
+		)
+	} else {
+		(*w).Write(
+			[]byte(
+				fmt.Sprintf("{\"error\": \"%v\"}", err),
+			),
+		)
+	}
 }
 
 var app application.Application

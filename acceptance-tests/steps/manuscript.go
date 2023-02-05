@@ -11,6 +11,7 @@ import (
 	"github.com/ThomasFerro/l-edition-libre/api"
 	"github.com/ThomasFerro/l-edition-libre/application"
 	"github.com/ThomasFerro/l-edition-libre/domain"
+	msgs "github.com/cucumber/messages-go/v12"
 	"github.com/go-bdd/gobdd"
 )
 
@@ -50,6 +51,11 @@ func sumbitManuscript(t gobdd.StepTest, ctx gobdd.Context, manuscriptName string
 	testContext.SetManuscriptID(ctx, manuscriptName, newManuscriptID)
 }
 
+// TODO: déplacer dans le code de prod ?
+type HttpErrorMessage struct {
+	Error string `json:"error"`
+}
+
 func cancelManuscriptSubmission(t gobdd.StepTest, ctx gobdd.Context, manuscriptName string) {
 	manuscriptID := testContext.GetManuscriptID(ctx, manuscriptName)
 	url := fmt.Sprintf("http://localhost:8080/api/manuscripts/%v/cancel-submission", manuscriptID.String())
@@ -58,8 +64,37 @@ func cancelManuscriptSubmission(t gobdd.StepTest, ctx gobdd.Context, manuscriptN
 		t.Fatalf("unable to cancel manuscript submission - post error: %v", err)
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode >= 400 {
-		t.Fatalf("unable to cancel manuscript submission - wrong response code: %v", resp.StatusCode)
+		// TODO: Passer cette logique dans un handleError
+		value, err := ctx.Get(gobdd.ScenarioKey{})
+		if err != nil {
+			t.Fatalf("unable to get scenario context: %v", err)
+		}
+		scenario := value.(*msgs.GherkinDocument_Feature_Scenario)
+		isAnErrorHandlingScenario := false
+		for _, nextTag := range scenario.Tags {
+			if nextTag.Name == "@Error" {
+				isAnErrorHandlingScenario = true
+				break
+			}
+		}
+
+		if isAnErrorHandlingScenario {
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				t.Fatalf("unable to cancel manuscript submission - body read error: %v", err)
+			}
+
+			var httpErrorMessage HttpErrorMessage
+			err = json.Unmarshal(body, &httpErrorMessage)
+			if err != nil {
+				t.Fatalf("unable to cancel manuscript submission - body unmarshal error: %v (body: %v)", err, string(body))
+			}
+			ctx.Set(testContext.ErrorKey{}, httpErrorMessage.Error)
+		} else {
+			t.Fatalf("unable to cancel manuscript submission - wrong response code: %v", resp.StatusCode)
+		}
 	}
 }
 
@@ -104,6 +139,7 @@ func ManuscriptSteps(suite *gobdd.Suite) {
 	suite.AddStep(`I submit a PDF manuscript for "(.+?)"`, sumbitManuscript)
 	suite.AddStep(`I submitted a PDF manuscript for "(.+?)"`, sumbitManuscript)
 	suite.AddStep(`I cancel the submission of "(.+?)"`, cancelManuscriptSubmission)
+	suite.AddStep(`submission of "(.+?)" was canceled`, cancelManuscriptSubmission)
 	suite.AddStep(`"(.+?)" is pending review from the editor`, shouldBePendingReview)
-	suite.AddStep(`"(.+?)"'s submission is canceled`, shouldBeCanceled)
+	suite.AddStep(`submission of "(.+?)" is canceled`, shouldBeCanceled)
 }

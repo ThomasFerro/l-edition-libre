@@ -5,6 +5,8 @@ import (
 	"github.com/go-bdd/gobdd/context"
 )
 
+type ErrorKey struct{}
+
 type ManuscriptIdByNameKey struct{}
 type ManuscriptIdByName map[string]application.ManuscriptID
 

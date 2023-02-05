@@ -10,7 +10,7 @@ type SubmitManuscript struct {
 	ManuscriptName string
 }
 
-func HandleSubmitManuscript(command SubmitManuscript) ([]events.Event, error) {
+func HandleSubmitManuscript(command SubmitManuscript) ([]events.Event, CommandError) {
 	return []events.Event{
 		events.ManuscriptSubmitted{},
 	}, nil

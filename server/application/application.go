@@ -27,19 +27,24 @@ func (app Application) manageCommandReturn(manuscriptID ManuscriptID, newEvents 
 
 func (app Application) Send(manuscriptID ManuscriptID, command commands.Command) ([]events.Event, error) {
 	slog.Info("receiving command", "type", fmt.Sprintf("%T", command), "manuscript_id", manuscriptID, "command", command)
+	// TODO: Simplifier en jouant avec l'interface de la commande ?
 	switch typedCommand := command.(type) {
 	case commands.SubmitManuscript:
-		newEvents, err := commands.HandleSubmitManuscript(typedCommand)
-		return app.manageCommandReturn(manuscriptID, newEvents, err)
+		newEvents, commandError := commands.HandleSubmitManuscript(typedCommand)
+		return app.manageCommandReturn(manuscriptID, newEvents, commandError)
 	case commands.CancelManuscriptSubmission:
-		newEvents, err := commands.HandleCancelManuscriptSubmission(typedCommand)
+		history, err := app.history.For(manuscriptID)
+		if err != nil {
+			return nil, err
+		}
+		newEvents, err := commands.HandleCancelManuscriptSubmission(history, typedCommand)
 		return app.manageCommandReturn(manuscriptID, newEvents, err)
 	default:
 		return nil, fmt.Errorf("unmanaged command type %T", command)
 	}
 }
 
-// TODO: Remplacer le retour par du générique ?
+// TODO: mieux typer le retour (générique?)
 func (app Application) Query(manuscriptID ManuscriptID, query queries.Query) (interface{}, error) {
 	slog.Info("receiving query", "type", fmt.Sprintf("%T", query), "manuscript_id", manuscriptID, "command", query)
 	history, err := app.history.For(manuscriptID)
