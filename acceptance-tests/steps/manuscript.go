@@ -9,8 +9,8 @@ import (
 	"net/http"
 
 	"github.com/ThomasFerro/l-edition-libre/api"
+	"github.com/ThomasFerro/l-edition-libre/application"
 	"github.com/ThomasFerro/l-edition-libre/domain"
-	"github.com/ThomasFerro/l-edition-libre/events"
 	"github.com/go-bdd/gobdd"
 )
 
@@ -46,12 +46,13 @@ func sumbitManuscript(t gobdd.StepTest, ctx gobdd.Context, manuscriptName string
 	if err != nil {
 		t.Fatalf("unable to submit the manuscript - body unmarshal error: %v (body: %v)", err, string(body))
 	}
-	testContext.SetManuscriptID(ctx, manuscriptName, events.ManuscriptID(newManuscript.Id))
+	newManuscriptID := application.MustParseManuscriptID(newManuscript.Id)
+	testContext.SetManuscriptID(ctx, manuscriptName, newManuscriptID)
 }
 
 func cancelManuscriptSubmission(t gobdd.StepTest, ctx gobdd.Context, manuscriptName string) {
 	manuscriptID := testContext.GetManuscriptID(ctx, manuscriptName)
-	url := fmt.Sprintf("http://localhost:8080/api/manuscripts/%v/cancel-submission", manuscriptID)
+	url := fmt.Sprintf("http://localhost:8080/api/manuscripts/%v/cancel-submission", manuscriptID.String())
 	resp, err := http.Post(url, "application/json", nil)
 	if err != nil {
 		t.Fatalf("unable to cancel manuscript submission - post error: %v", err)
@@ -64,7 +65,7 @@ func cancelManuscriptSubmission(t gobdd.StepTest, ctx gobdd.Context, manuscriptN
 
 func manuscriptStatusShouldBe(t gobdd.StepTest, ctx gobdd.Context, manuscriptName string, expectedStatus domain.Status) {
 	manuscriptID := testContext.GetManuscriptID(ctx, manuscriptName)
-	url := fmt.Sprintf("http://localhost:8080/api/manuscripts/%v", manuscriptID)
+	url := fmt.Sprintf("http://localhost:8080/api/manuscripts/%v", manuscriptID.String())
 	response, err := http.Get(url)
 
 	if err != nil {

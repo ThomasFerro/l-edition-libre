@@ -9,43 +9,53 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// TODO: Interfacer ?
-type Application struct {
-	history []events.Event
+type History interface {
+	For(ManuscriptID) ([]events.Event, error)
+	Append(ManuscriptID, []events.Event) error
 }
 
-// TODO: repasser Application en immutable après avoir persisté les évènements ailleurs
-func (app *Application) manageCommandReturn(newEvents []events.Event, err error) ([]events.Event, error) {
+type Application struct {
+	history History
+}
+
+func (app Application) manageCommandReturn(manuscriptID ManuscriptID, newEvents []events.Event, err error) ([]events.Event, error) {
 	if err != nil {
 		return nil, err
 	}
-	app.history = append(app.history, newEvents...)
-	return newEvents, nil
+	return newEvents, app.history.Append(manuscriptID, newEvents)
 }
 
-func (app *Application) Send(command commands.Command) ([]events.Event, error) {
-	slog.Info("receiving command", "type", fmt.Sprintf("%T", command), "command", command)
+func (app Application) Send(manuscriptID ManuscriptID, command commands.Command) ([]events.Event, error) {
+	slog.Info("receiving command", "type", fmt.Sprintf("%T", command), "manuscript_id", manuscriptID, "command", command)
 	switch typedCommand := command.(type) {
 	case commands.SubmitManuscript:
-		return app.manageCommandReturn(commands.HandleSubmitManuscript(typedCommand))
+		newEvents, err := commands.HandleSubmitManuscript(typedCommand)
+		return app.manageCommandReturn(manuscriptID, newEvents, err)
 	case commands.CancelManuscriptSubmission:
-		return app.manageCommandReturn(commands.HandleCancelManuscriptSubmission(typedCommand))
+		newEvents, err := commands.HandleCancelManuscriptSubmission(typedCommand)
+		return app.manageCommandReturn(manuscriptID, newEvents, err)
 	default:
 		return nil, fmt.Errorf("unmanaged command type %T", command)
 	}
 }
 
 // TODO: Remplacer le retour par du générique ?
-func (app Application) Query(query queries.Query) (interface{}, error) {
+func (app Application) Query(manuscriptID ManuscriptID, query queries.Query) (interface{}, error) {
+	slog.Info("receiving query", "type", fmt.Sprintf("%T", query), "manuscript_id", manuscriptID, "command", query)
+	history, err := app.history.For(manuscriptID)
+	if err != nil {
+		return nil, fmt.Errorf("unable to fetch history before managing query %T", query)
+	}
 	switch typedQuery := query.(type) {
 	case queries.ManuscriptStatus:
-		// TODO: N'envoyer que l'historique pour le manuscrit demandé
-		return queries.GetManuscriptStatus(app.history, typedQuery)
+		return queries.GetManuscriptStatus(history, typedQuery)
 	default:
 		return nil, fmt.Errorf("unmanaged query type %T", query)
 	}
 }
 
-func NewApplication() Application {
-	return Application{}
+func NewApplication(history History) Application {
+	return Application{
+		history,
+	}
 }

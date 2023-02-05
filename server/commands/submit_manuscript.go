@@ -12,9 +12,7 @@ type SubmitManuscript struct {
 
 func HandleSubmitManuscript(command SubmitManuscript) ([]events.Event, error) {
 	return []events.Event{
-		events.ManuscriptSubmitted{
-			CreatedManuscriptID: "todo",
-		},
+		events.ManuscriptSubmitted{},
 	}, nil
 }
 

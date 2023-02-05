@@ -6,9 +6,7 @@ import (
 	"github.com/ThomasFerro/l-edition-libre/events"
 )
 
-type CancelManuscriptSubmission struct {
-	events.ManuscriptID
-}
+type CancelManuscriptSubmission struct{}
 
 func HandleCancelManuscriptSubmission(command CancelManuscriptSubmission) ([]events.Event, error) {
 	return []events.Event{
@@ -17,5 +15,5 @@ func HandleCancelManuscriptSubmission(command CancelManuscriptSubmission) ([]eve
 }
 
 func (c CancelManuscriptSubmission) String() string {
-	return fmt.Sprintf("CancelManuscriptSubmission{ManuscriptID %v}", c.ManuscriptID)
+	return fmt.Sprintf("CancelManuscriptSubmission{}")
 }

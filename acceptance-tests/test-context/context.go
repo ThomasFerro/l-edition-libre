@@ -1,12 +1,12 @@
 package testContext
 
 import (
-	"github.com/ThomasFerro/l-edition-libre/events"
+	"github.com/ThomasFerro/l-edition-libre/application"
 	"github.com/go-bdd/gobdd/context"
 )
 
 type ManuscriptIdByNameKey struct{}
-type ManuscriptIdByName map[string]events.ManuscriptID
+type ManuscriptIdByName map[string]application.ManuscriptID
 
 func getOrCreateManuscriptIdByNameFromContext(ctx context.Context) (ManuscriptIdByName, error) {
 	manuscriptIdByName, err := ctx.Get(ManuscriptIdByNameKey{})
@@ -18,7 +18,7 @@ func getOrCreateManuscriptIdByNameFromContext(ctx context.Context) (ManuscriptId
 	return newMap, nil
 }
 
-func GetManuscriptID(ctx context.Context, manuscriptName string) events.ManuscriptID {
+func GetManuscriptID(ctx context.Context, manuscriptName string) application.ManuscriptID {
 	manuscriptIdByName, err := getOrCreateManuscriptIdByNameFromContext(ctx)
 	if err != nil {
 		panic(err)
@@ -27,7 +27,7 @@ func GetManuscriptID(ctx context.Context, manuscriptName string) events.Manuscri
 	return manuscriptIdByName[manuscriptName]
 }
 
-func SetManuscriptID(ctx context.Context, manuscriptName string, manuscriptID events.ManuscriptID) {
+func SetManuscriptID(ctx context.Context, manuscriptName string, manuscriptID application.ManuscriptID) {
 	manuscriptIdByName, err := getOrCreateManuscriptIdByNameFromContext(ctx)
 	if err != nil {
 		panic(err)
