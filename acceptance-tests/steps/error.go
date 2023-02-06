@@ -1,9 +1,9 @@
 package steps
 
 import (
+	testContext "acceptance-tests/test-context"
 	"context"
 	"fmt"
-	testContext "godogs/test-context"
 
 	"github.com/cucumber/godog"
 )

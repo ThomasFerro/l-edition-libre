@@ -1,9 +1,13 @@
 package godogs_test
 
 import (
-	"godogs/steps"
+	"acceptance-tests/steps"
+	testContext "acceptance-tests/test-context"
+	"context"
+	"fmt"
 	"testing"
 
+	"github.com/ThomasFerro/l-edition-libre/api"
 	"github.com/cucumber/godog"
 )
 
@@ -19,18 +23,36 @@ func thereShouldBeRemaining(arg1 int) error {
 	return godog.ErrPending
 }
 
+func InitializeTestSuite(*godog.TestSuiteContext) {
+	go api.Start()
+}
+
 func InitializeScenario(ctx *godog.ScenarioContext) {
+	ctx.Before(func(ctx context.Context, sc *godog.Scenario) (context.Context, error) {
+		return context.WithValue(ctx, testContext.TagsKey{}, sc.Tags), nil
+	})
+	ctx.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Context, error) {
+		unhandledError, ok := ctx.Value(testContext.ErrorKey{}).(string)
+		if ok {
+			return ctx, fmt.Errorf("unhandled error in tests: %v", unhandledError)
+		}
+		return ctx, nil
+	})
+
 	steps.AuthenticationSteps(ctx)
+	steps.ManuscriptSteps(ctx)
 	steps.ErrorSteps(ctx)
 }
 
 func TestFeatures(t *testing.T) {
 	suite := godog.TestSuite{
-		ScenarioInitializer: InitializeScenario,
+		TestSuiteInitializer: InitializeTestSuite,
+		ScenarioInitializer:  InitializeScenario,
 		Options: &godog.Options{
-			Format:   "pretty",
-			Paths:    []string{"features"},
-			TestingT: t,
+			Format:        "pretty",
+			Paths:         []string{"features"},
+			TestingT:      t,
+			StopOnFailure: true,
 		},
 	}
 

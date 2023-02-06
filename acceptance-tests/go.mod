@@ -1,5 +1,4 @@
-// TODO: renommer acceptance tests
-module godogs
+module acceptance-tests
 
 go 1.20
 

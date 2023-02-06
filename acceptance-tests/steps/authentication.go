@@ -6,7 +6,7 @@ import (
 	"github.com/cucumber/godog"
 )
 
-func authentifyAsWriter(ctx context.Context, errorType string) (context.Context, error) {
+func authentifyAsWriter(ctx context.Context) (context.Context, error) {
 	// TODO: créer un nouveau writer et s'authentifier avec
 	return ctx, nil
 }
