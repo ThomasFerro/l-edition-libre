@@ -1,17 +1,18 @@
 package steps
 
 import (
-	testContext "acceptance-tests/test-context"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	testContext "godogs/test-context"
 	"io/ioutil"
 	"net/http"
 
 	"github.com/ThomasFerro/l-edition-libre/api"
 	"github.com/ThomasFerro/l-edition-libre/application"
 	"github.com/ThomasFerro/l-edition-libre/domain"
-	msgs "github.com/cucumber/messages-go/v12"
+	"github.com/cucumber/godog"
 	"github.com/go-bdd/gobdd"
 )
 
@@ -22,7 +23,7 @@ type submitManuscriptResponse struct {
 	Id string `json:"id"`
 }
 
-func sumbitManuscript(t gobdd.StepTest, ctx gobdd.Context, manuscriptName string) {
+func sumbitManuscript(ctx context.Context, manuscriptName string) (context.Context, error) {
 	marshalled, err := json.Marshal(submitManuscriptRequest{
 		ManuscriptName: manuscriptName,
 	})
@@ -56,7 +57,7 @@ type HttpErrorMessage struct {
 	Error string `json:"error"`
 }
 
-func cancelManuscriptSubmission(t gobdd.StepTest, ctx gobdd.Context, manuscriptName string) {
+func cancelManuscriptSubmission(ctx context.Context, manuscriptName string) (context.Context, error) {
 	manuscriptID := testContext.GetManuscriptID(ctx, manuscriptName)
 	url := fmt.Sprintf("http://localhost:8080/api/manuscripts/%v/cancel-submission", manuscriptID.String())
 	resp, err := http.Post(url, "application/json", nil)
@@ -98,7 +99,7 @@ func cancelManuscriptSubmission(t gobdd.StepTest, ctx gobdd.Context, manuscriptN
 	}
 }
 
-func manuscriptStatusShouldBe(t gobdd.StepTest, ctx gobdd.Context, manuscriptName string, expectedStatus domain.Status) {
+func manuscriptStatusShouldBe(ctx context.Context, manuscriptName string, expectedStatus domain.Status) (context.Context, error) {
 	manuscriptID := testContext.GetManuscriptID(ctx, manuscriptName)
 	url := fmt.Sprintf("http://localhost:8080/api/manuscripts/%v", manuscriptID.String())
 	response, err := http.Get(url)
@@ -127,19 +128,19 @@ func manuscriptStatusShouldBe(t gobdd.StepTest, ctx gobdd.Context, manuscriptNam
 	}
 }
 
-func shouldBePendingReview(t gobdd.StepTest, ctx gobdd.Context, manuscriptName string) {
+func shouldBePendingReview(ctx context.Context, manuscriptName string) (context.Context, error) {
 	manuscriptStatusShouldBe(t, ctx, manuscriptName, domain.PendingReview)
 }
 
-func shouldBeCanceled(t gobdd.StepTest, ctx gobdd.Context, manuscriptName string) {
+func shouldBeCanceled(ctx context.Context, manuscriptName string) (context.Context, error) {
 	manuscriptStatusShouldBe(t, ctx, manuscriptName, domain.Canceled)
 }
 
-func ManuscriptSteps(suite *gobdd.Suite) {
-	suite.AddStep(`I submit a PDF manuscript for "(.+?)"`, sumbitManuscript)
-	suite.AddStep(`I submitted a PDF manuscript for "(.+?)"`, sumbitManuscript)
-	suite.AddStep(`I cancel the submission of "(.+?)"`, cancelManuscriptSubmission)
-	suite.AddStep(`submission of "(.+?)" was canceled`, cancelManuscriptSubmission)
-	suite.AddStep(`"(.+?)" is pending review from the editor`, shouldBePendingReview)
-	suite.AddStep(`submission of "(.+?)" is canceled`, shouldBeCanceled)
+func ManuscriptSteps(ctx *godog.ScenarioContext) {
+	ctx.Step(`I submit a PDF manuscript for "(.+?)"`, sumbitManuscript)
+	ctx.Step(`I submitted a PDF manuscript for "(.+?)"`, sumbitManuscript)
+	ctx.Step(`I cancel the submission of "(.+?)"`, cancelManuscriptSubmission)
+	ctx.Step(`submission of "(.+?)" was canceled`, cancelManuscriptSubmission)
+	ctx.Step(`"(.+?)" is pending review from the editor`, shouldBePendingReview)
+	ctx.Step(`submission of "(.+?)" is canceled`, shouldBeCanceled)
 }

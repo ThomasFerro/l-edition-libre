@@ -1,11 +1,16 @@
 package steps
 
-import "github.com/go-bdd/gobdd"
+import (
+	"context"
 
-func authentifyAsWriter(t gobdd.StepTest, ctx gobdd.Context) {
+	"github.com/cucumber/godog"
+)
+
+func authentifyAsWriter(ctx context.Context, errorType string) (context.Context, error) {
 	// TODO: créer un nouveau writer et s'authentifier avec
+	return ctx, nil
 }
 
-func AuthenticationSteps(suite *gobdd.Suite) {
-	suite.AddStep(`I am an authentified writer`, authentifyAsWriter)
+func AuthenticationSteps(ctx *godog.ScenarioContext) {
+	ctx.Step(`I am an authentified writer`, authentifyAsWriter)
 }

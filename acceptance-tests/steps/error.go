@@ -1,22 +1,21 @@
 package steps
 
 import (
-	testContext "acceptance-tests/test-context"
+	"context"
+	"fmt"
+	testContext "godogs/test-context"
 
-	"github.com/go-bdd/gobdd"
+	"github.com/cucumber/godog"
 )
 
-func errorThrown(t gobdd.StepTest, ctx gobdd.Context, errorType string) {
-	scenarioError, err := ctx.Get(testContext.ErrorKey{})
-	if err != nil {
-		t.Fatalf("cannot get error from test context: %v", err)
-	}
+func errorThrown(ctx context.Context, errorType string) (context.Context, error) {
+	scenarioError := ctx.Value(testContext.ErrorKey{})
 	if scenarioError != errorType {
-		t.Fatalf("expected a scenario error of type %v but got %v", errorType, scenarioError)
+		return ctx, fmt.Errorf("expected a scenario error of type %v but got %v", errorType, scenarioError)
 	}
-	// TODO: Sortir l'erreur du context
+	return context.WithValue(ctx, testContext.ErrorKey{}, nil), nil
 }
 
-func ErrorSteps(suite *gobdd.Suite) {
-	suite.AddStep(`the error "(.+?)" is thrown`, errorThrown)
+func ErrorSteps(ctx *godog.ScenarioContext) {
+	ctx.Step(`the error "(.+?)" is thrown`, errorThrown)
 }
