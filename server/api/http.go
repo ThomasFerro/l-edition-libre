@@ -14,18 +14,22 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-type SubmitManuscriptDto struct {
+type SubmitManuscriptRequestDto struct {
 	ManuscriptName string `json:"manuscript_name"`
+}
+
+type SubmitManuscriptResponseDto struct {
+	Id string `json:"id"`
 }
 
 func handleManuscriptCreation(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
-	var dto SubmitManuscriptDto
+	var dto SubmitManuscriptRequestDto
 	err := decoder.Decode(&dto)
 	slog.Info("receiving manuscript creation request", "body", dto)
 	if err != nil {
 		slog.Error("manuscript creation request dto decoding error", err)
-		manageError(&w, err)
+		manageError(w, err)
 		return
 	}
 
@@ -35,16 +39,13 @@ func handleManuscriptCreation(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		slog.Error("manuscript creation request error", err)
-		manageError(&w, err)
+		manageError(w, err)
 		return
 	}
 	slog.Info("manuscript created", "manuscript_id", newManuscriptID.String())
-	w.Header().Add("Content-Type", "application/json")
-	w.Write(
-		[]byte(
-			fmt.Sprintf("{\"id\": \"%v\"}", newManuscriptID.String()),
-		),
-	)
+	writeJson(w, SubmitManuscriptResponseDto{
+		Id: newManuscriptID.String(),
+	})
 }
 
 func handleManuscripts(w http.ResponseWriter, r *http.Request) {
@@ -66,28 +67,19 @@ func handleGetManuscriptState(manuscriptID application.ManuscriptID, w http.Resp
 	queryResult, err := app.Query(manuscriptID, queries.ManuscriptStatus{})
 	if err != nil {
 		slog.Error("manuscript status query error", err)
-		manageError(&w, err)
+		manageError(w, err)
 		return
 	}
 	status, castedSuccessfuly := queryResult.(domain.Status)
 	if !castedSuccessfuly {
 		slog.Error("manuscript status query result casting error", err)
-		manageError(&w, err)
+		manageError(w, err)
 		return
 	}
 
-	w.Header().Add("Content-Type", "application/json")
-
-	manuscriptJSON, err := json.Marshal(
-		ManuscriptDto{
-			Status: string(status),
-		},
-	)
-	if err != nil {
-		manageError(&w, err)
-		return
-	}
-	w.Write(manuscriptJSON)
+	writeJson(w, ManuscriptDto{
+		Status: string(status),
+	})
 }
 
 func handleCancelManuscriptSubmission(manuscriptID application.ManuscriptID, w http.ResponseWriter, r *http.Request) {
@@ -95,13 +87,11 @@ func handleCancelManuscriptSubmission(manuscriptID application.ManuscriptID, w h
 	_, err := app.Send(manuscriptID, commands.CancelManuscriptSubmission{})
 	if err != nil {
 		slog.Error("manuscript submission cancelling request error", err)
-		manageError(&w, err)
+		manageError(w, err)
 		return
 	}
 	slog.Info("manuscript submission cancelled", "manuscript_id", manuscriptID)
-	w.WriteHeader(http.StatusOK)
-	w.Header().Add("Content-Type", "application/json")
-	w.Write([]byte(""))
+	writeJson(w, "")
 }
 
 func handleManuscript(w http.ResponseWriter, r *http.Request) {
@@ -121,24 +111,6 @@ func handleManuscript(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusMethodNotAllowed)
 	fmt.Fprintf(w, "invalid_http_method")
-}
-
-func manageError(w *http.ResponseWriter, err error) {
-	(*w).WriteHeader(http.StatusInternalServerError)
-	typedCommandError, isCommandError := err.(commands.CommandError)
-	if isCommandError {
-		(*w).Write(
-			[]byte(
-				fmt.Sprintf("{\"error\": \"%v\"}", typedCommandError.Name()),
-			),
-		)
-	} else {
-		(*w).Write(
-			[]byte(
-				fmt.Sprintf("{\"error\": \"%v\"}", err),
-			),
-		)
-	}
 }
 
 var app application.Application

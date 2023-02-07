@@ -1,8 +1,8 @@
 package godogs_test
 
 import (
+	"acceptance-tests/helpers"
 	"acceptance-tests/steps"
-	testContext "acceptance-tests/test-context"
 	"context"
 	"fmt"
 	"testing"
@@ -29,10 +29,10 @@ func InitializeTestSuite(*godog.TestSuiteContext) {
 
 func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Before(func(ctx context.Context, sc *godog.Scenario) (context.Context, error) {
-		return context.WithValue(ctx, testContext.TagsKey{}, sc.Tags), nil
+		return context.WithValue(ctx, helpers.TagsKey{}, sc.Tags), nil
 	})
 	ctx.After(func(ctx context.Context, sc *godog.Scenario, err error) (context.Context, error) {
-		unhandledError, ok := ctx.Value(testContext.ErrorKey{}).(string)
+		unhandledError, ok := ctx.Value(helpers.ErrorKey{}).(string)
 		if ok {
 			return ctx, fmt.Errorf("unhandled error in tests: %v", unhandledError)
 		}
