@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	"github.com/ThomasFerro/l-edition-libre/api"
+	"github.com/ThomasFerro/l-edition-libre/application"
 	"github.com/cucumber/messages-go/v16"
 )
 
@@ -76,6 +77,16 @@ func extractResponse(response *http.Response, responseDto interface{}) error {
 	return nil
 }
 
+// TODO: Ne pas passer par un header mais par un JWT (OAuth2 ?)
+func addUserHeader(ctx context.Context, request *http.Request) {
+	currentUser, ok := ctx.Value(AuthentifiedUser{}).(application.UserID)
+	if !ok {
+		return
+	}
+	// TODO: Variabiliser le header?
+	request.Header.Add("X-User-Id", currentUser.String())
+}
+
 func Call(ctx context.Context, url string, method string, body interface{}, responseDto interface{}) (context.Context, error) {
 	bodyReader, err := bodyToReader(body)
 	if err != nil {
@@ -84,6 +95,10 @@ func Call(ctx context.Context, url string, method string, body interface{}, resp
 	request, err := http.NewRequest(method, url, bodyReader)
 	if err != nil {
 		return ctx, fmt.Errorf("unable to create new http request: %v", err)
+	}
+	addUserHeader(ctx, request)
+	if err != nil {
+		return ctx, fmt.Errorf("unable to add user http header: %v", err)
 	}
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {

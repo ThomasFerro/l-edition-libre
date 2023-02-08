@@ -9,6 +9,12 @@ import (
 type ErrorKey struct{}
 type TagsKey struct{}
 
+type AuthentifiedUser struct{}
+
+func SetAuthentifiedUserID(ctx context.Context, userID application.UserID) context.Context {
+	return context.WithValue(ctx, AuthentifiedUser{}, userID)
+}
+
 type ManuscriptIdByNameKey struct{}
 type ManuscriptIdByName map[string]application.ManuscriptID
 

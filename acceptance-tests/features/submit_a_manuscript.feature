@@ -7,7 +7,6 @@ Feature: Submit a manusript
   Background:
     Given I am an authentified writer
 
-
   @PDF
   Scenario: Submit a PDF manuscript
     When I submit a PDF manuscript for "My first novel"
@@ -25,6 +24,13 @@ Feature: Submit a manusript
     And submission of "My first novel" was canceled
     When I cancel the submission of "My first novel"
     Then the error "AManuscriptShouldBePendingReviewForItsSubmissionToBeCanceled" is thrown
+
+  @Error @Users
+  Scenario: Only the writer of a manuscript can cancel its submission
+    Given I submitted a PDF manuscript for "My first novel"
+    And I am authentified as another writer
+    When I cancel the submission of "My first novel"
+    Then the error "ManuscriptNotFound" is thrown
 
 # TODO: Impossible d'annuler un manuscrit qui n'est pas pending
 # TODO: Impossible de voir le status d'un manuscript ou en annuler la soumission si ce n'est pas le notre

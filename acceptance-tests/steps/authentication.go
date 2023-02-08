@@ -1,16 +1,30 @@
 package steps
 
 import (
+	"acceptance-tests/helpers"
 	"context"
+	"fmt"
+	"net/http"
 
+	"github.com/ThomasFerro/l-edition-libre/api"
+	"github.com/ThomasFerro/l-edition-libre/application"
 	"github.com/cucumber/godog"
 )
 
 func authentifyAsWriter(ctx context.Context) (context.Context, error) {
-	// TODO: créer un nouveau writer et s'authentifier avec
-	return ctx, nil
+	var newUser api.CreateAccountResponseDto
+	ctx, err := helpers.Call(ctx, "http://localhost:8080/api/users", http.MethodPost, api.CreateAccountRequestDto{
+		DisplayedName: "Writer",
+	}, &newUser)
+	if err != nil {
+		return ctx, fmt.Errorf("unable to create a new writer account: %v", err)
+	}
+
+	newUserID := application.MustParseUserID(newUser.Id)
+	return helpers.SetAuthentifiedUserID(ctx, newUserID), nil
 }
 
 func AuthenticationSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`I am an authentified writer`, authentifyAsWriter)
+	ctx.Step(`I am authentified as another writer`, authentifyAsWriter)
 }

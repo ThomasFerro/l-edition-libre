@@ -10,44 +10,44 @@ import (
 )
 
 type History interface {
-	For(ManuscriptID) ([]events.Event, error)
-	Append(ManuscriptID, []events.Event) error
+	For(UserID, ManuscriptID) ([]events.Event, error)
+	Append(UserID, ManuscriptID, []events.Event) error
 }
 
 type Application struct {
 	history History
 }
 
-func (app Application) manageCommandReturn(manuscriptID ManuscriptID, newEvents []events.Event, err error) ([]events.Event, error) {
+func (app Application) manageCommandReturn(userID UserID, manuscriptID ManuscriptID, newEvents []events.Event, err error) ([]events.Event, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newEvents, app.history.Append(manuscriptID, newEvents)
+	return newEvents, app.history.Append(userID, manuscriptID, newEvents)
 }
 
-func (app Application) Send(manuscriptID ManuscriptID, command commands.Command) ([]events.Event, error) {
+func (app Application) Send(userID UserID, manuscriptID ManuscriptID, command commands.Command) ([]events.Event, error) {
 	slog.Info("receiving command", "type", fmt.Sprintf("%T", command), "manuscript_id", manuscriptID, "command", command)
 	// TODO: Simplifier en jouant avec l'interface de la commande ?
 	switch typedCommand := command.(type) {
 	case commands.SubmitManuscript:
 		newEvents, commandError := commands.HandleSubmitManuscript(typedCommand)
-		return app.manageCommandReturn(manuscriptID, newEvents, commandError)
+		return app.manageCommandReturn(userID, manuscriptID, newEvents, commandError)
 	case commands.CancelManuscriptSubmission:
-		history, err := app.history.For(manuscriptID)
+		history, err := app.history.For(userID, manuscriptID)
 		if err != nil {
 			return nil, err
 		}
 		newEvents, err := commands.HandleCancelManuscriptSubmission(history, typedCommand)
-		return app.manageCommandReturn(manuscriptID, newEvents, err)
+		return app.manageCommandReturn(userID, manuscriptID, newEvents, err)
 	default:
 		return nil, fmt.Errorf("unmanaged command type %T", command)
 	}
 }
 
 // TODO: mieux typer le retour (générique?)
-func (app Application) Query(manuscriptID ManuscriptID, query queries.Query) (interface{}, error) {
+func (app Application) Query(userID UserID, manuscriptID ManuscriptID, query queries.Query) (interface{}, error) {
 	slog.Info("receiving query", "type", fmt.Sprintf("%T", query), "manuscript_id", manuscriptID, "command", query)
-	history, err := app.history.For(manuscriptID)
+	history, err := app.history.For(userID, manuscriptID)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch history before managing query %T", query)
 	}
