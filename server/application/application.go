@@ -49,7 +49,7 @@ func (app Application) Query(userID UserID, manuscriptID ManuscriptID, query que
 	slog.Info("receiving query", "type", fmt.Sprintf("%T", query), "manuscript_id", manuscriptID, "command", query)
 	history, err := app.history.For(userID, manuscriptID)
 	if err != nil {
-		return nil, fmt.Errorf("unable to fetch history before managing query %T", query)
+		return nil, err
 	}
 	switch typedQuery := query.(type) {
 	case queries.ManuscriptStatus:

@@ -34,29 +34,29 @@ func isAnErrorHandlingScenario(tags []*messages.PickleTag) bool {
 	return false
 }
 
-func handleHttpError(ctx context.Context, response *http.Response) (context.Context, error) {
+func handleHttpError(ctx context.Context, response *http.Response) (context.Context, bool, error) {
 	if response.StatusCode >= 400 {
 		tags, ok := ctx.Value(TagsKey{}).([]*messages.PickleTag)
 		if !ok {
-			return ctx, fmt.Errorf("unable to get scenario tags")
+			return ctx, false, fmt.Errorf("unable to get scenario tags")
 		}
 
 		if isAnErrorHandlingScenario(tags) {
 			body, err := ioutil.ReadAll(response.Body)
 			if err != nil {
-				return ctx, fmt.Errorf("body read error: %v", err)
+				return ctx, false, fmt.Errorf("body read error: %v", err)
 			}
 
 			var httpErrorMessage api.HttpErrorMessage
 			err = json.Unmarshal(body, &httpErrorMessage)
 			if err != nil {
-				return ctx, fmt.Errorf("body unmarshal error: %v (body: %v)", err, string(body))
+				return ctx, false, fmt.Errorf("body unmarshal error: %v (body: %v)", err, string(body))
 			}
-			return context.WithValue(ctx, ErrorKey{}, httpErrorMessage.Error), nil
+			return context.WithValue(ctx, ErrorKey{}, httpErrorMessage.Error), true, nil
 		}
-		return ctx, fmt.Errorf("wrong response code: %v", response.StatusCode)
+		return ctx, false, fmt.Errorf("wrong response code: %v", response.StatusCode)
 	}
-	return ctx, nil
+	return ctx, false, nil
 }
 
 func extractResponse(response *http.Response, responseDto interface{}) error {
@@ -106,9 +106,12 @@ func Call(ctx context.Context, url string, method string, body interface{}, resp
 	}
 	defer response.Body.Close()
 
-	ctx, err = handleHttpError(ctx, response)
+	ctx, handled, err := handleHttpError(ctx, response)
 	if err != nil {
 		return ctx, fmt.Errorf("unable to handle request error: %v", err)
+	}
+	if handled {
+		return ctx, nil
 	}
 
 	err = extractResponse(response, responseDto)

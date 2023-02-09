@@ -36,13 +36,21 @@ func cancelManuscriptSubmission(ctx context.Context, manuscriptName string) (con
 	return ctx, nil
 }
 
-func manuscriptStatusShouldBe(ctx context.Context, manuscriptName string, expectedStatus domain.Status) (context.Context, error) {
+func getManuscriptStatus(ctx context.Context, manuscriptName string) (context.Context, api.ManuscriptDto, error) {
 	ctx, manuscriptID := helpers.GetManuscriptID(ctx, manuscriptName)
 	url := fmt.Sprintf("http://localhost:8080/api/manuscripts/%v", manuscriptID.String())
 	var manuscript api.ManuscriptDto
 	ctx, err := helpers.Call(ctx, url, http.MethodGet, nil, &manuscript)
 	if err != nil {
-		return ctx, fmt.Errorf("unable to get manuscript's status: %v", err)
+		return ctx, api.ManuscriptDto{}, fmt.Errorf("unable to get manuscript's status: %v", err)
+	}
+	return ctx, manuscript, nil
+}
+
+func manuscriptStatusShouldBe(ctx context.Context, manuscriptName string, expectedStatus domain.Status) (context.Context, error) {
+	ctx, manuscript, err := getManuscriptStatus(ctx, manuscriptName)
+	if err != nil {
+		return ctx, fmt.Errorf("cannot check manuscript's status: %v", err)
 	}
 
 	if manuscript.Status != string(expectedStatus) {
@@ -59,6 +67,11 @@ func shouldBeCanceled(ctx context.Context, manuscriptName string) (context.Conte
 	return manuscriptStatusShouldBe(ctx, manuscriptName, domain.Canceled)
 }
 
+func tryGetStatus(ctx context.Context, manuscriptName string) (context.Context, error) {
+	ctx, _, err := getManuscriptStatus(ctx, manuscriptName)
+	return ctx, err
+}
+
 func ManuscriptSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`I submit a PDF manuscript for "(.+?)"`, sumbitManuscript)
 	ctx.Step(`I submitted a PDF manuscript for "(.+?)"`, sumbitManuscript)
@@ -66,4 +79,5 @@ func ManuscriptSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`submission of "(.+?)" was canceled`, cancelManuscriptSubmission)
 	ctx.Step(`"(.+?)" is pending review from the editor`, shouldBePendingReview)
 	ctx.Step(`submission of "(.+?)" is canceled`, shouldBeCanceled)
+	ctx.Step(`I try to get the submission status of "(.+?)"`, tryGetStatus)
 }

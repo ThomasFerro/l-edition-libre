@@ -26,6 +26,13 @@ Feature: Submit a manusript
     Then the error "AManuscriptShouldBePendingReviewForItsSubmissionToBeCanceled" is thrown
 
   @Error @Users
+  Scenario: Only the writer of a manuscript see its submission status
+    Given I submitted a PDF manuscript for "My first novel"
+    And I am authentified as another writer
+    When I try to get the submission status of "My first novel"
+    Then the error "ManuscriptNotFound" is thrown
+
+  @Error @Users
   Scenario: Only the writer of a manuscript can cancel its submission
     Given I submitted a PDF manuscript for "My first novel"
     And I am authentified as another writer
@@ -33,5 +40,4 @@ Feature: Submit a manusript
     Then the error "ManuscriptNotFound" is thrown
 
 # TODO: Impossible d'annuler un manuscrit qui n'est pas pending
-# TODO: Impossible de voir le status d'un manuscript ou en annuler la soumission si ce n'est pas le notre
 # TODO: Véritablement téléverser un document (vérifier qu'on l'a bien persisté en le récupérant ?)
