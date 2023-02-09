@@ -22,7 +22,7 @@ type SubmitManuscriptResponseDto struct {
 }
 
 func handleManuscriptCreation(w http.ResponseWriter, r *http.Request) {
-	userId, err := extractUserId(r)
+	userID, err := extractUserID(r)
 	if err != nil {
 		manageError(w, err)
 		return
@@ -30,7 +30,7 @@ func handleManuscriptCreation(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	var dto SubmitManuscriptRequestDto
 	err = decoder.Decode(&dto)
-	slog.Info("receiving manuscript creation request", "body", dto)
+	slog.Info("receiving manuscript creation request", "user_id", userID.String(), "body", dto)
 	if err != nil {
 		slog.Error("manuscript creation request dto decoding error", err)
 		manageError(w, err)
@@ -38,15 +38,15 @@ func handleManuscriptCreation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	newManuscriptID := application.NewManuscriptID()
-	_, err = app.Send(userId, application.ManuscriptID(newManuscriptID), commands.SubmitManuscript{
+	_, err = app.Send(userID, application.ManuscriptID(newManuscriptID), commands.SubmitManuscript{
 		ManuscriptName: dto.ManuscriptName,
 	})
 	if err != nil {
-		slog.Error("manuscript creation request error", err)
+		slog.Error("manuscript creation request error", err, "user_id", userID.String())
 		manageError(w, err)
 		return
 	}
-	slog.Info("manuscript created", "manuscript_id", newManuscriptID.String())
+	slog.Info("manuscript created", "user_id", userID.String(), "manuscript_id", newManuscriptID.String())
 	writeJson(w, SubmitManuscriptResponseDto{
 		Id: newManuscriptID.String(),
 	})
@@ -70,13 +70,13 @@ func handleGetManuscriptState(userID application.UserID, manuscriptID applicatio
 	slog.Info("manuscript status request", "user_id", userID.String(), "manuscript_id", manuscriptID.String())
 	queryResult, err := app.Query(userID, manuscriptID, queries.ManuscriptStatus{})
 	if err != nil {
-		slog.Error("manuscript status query error", err)
+		slog.Error("manuscript status query error", err, "user_id", userID.String(), "manuscript_id", manuscriptID.String())
 		manageError(w, err)
 		return
 	}
 	status, castedSuccessfuly := queryResult.(domain.Status)
 	if !castedSuccessfuly {
-		slog.Error("manuscript status query result casting error", err)
+		slog.Error("manuscript status query result casting error", err, "user_id", userID.String(), "manuscript_id", manuscriptID.String())
 		manageError(w, err)
 		return
 	}
@@ -90,16 +90,38 @@ func handleCancelManuscriptSubmission(userID application.UserID, manuscriptID ap
 	slog.Info("manuscript submission cancelling request", "user_id", userID.String(), "manuscript_id", manuscriptID.String())
 	_, err := app.Send(userID, manuscriptID, commands.CancelManuscriptSubmission{})
 	if err != nil {
-		slog.Error("manuscript submission cancelling request error", err)
+		slog.Error("manuscript submission cancelling request error", err, "user_id", userID.String(), "manuscript_id", manuscriptID.String())
 		manageError(w, err)
 		return
 	}
-	slog.Info("manuscript submission cancelled", "manuscript_id", manuscriptID)
+	slog.Info("manuscript submission cancelled", "user_id", userID.String(), "manuscript_id", manuscriptID)
+	writeJson(w, "")
+}
+
+// type ReviewManuscriptRequestDto struct{}
+
+func handleManuscriptReviewSubmission(userID application.UserID, manuscriptID application.ManuscriptID, w http.ResponseWriter, r *http.Request) {
+	// decoder := json.NewDecoder(r.Body)
+	// var dto ReviewManuscriptRequestDto
+	// err := decoder.Decode(&dto)
+	// slog.Info("manuscript submission review request", "user_id", userID.String(), "manuscript_id", manuscriptID.String(), "body", dto)
+	// if err != nil {
+	// 	slog.Error("manuscript creation request dto decoding error", err)
+	// 	manageError(w, err)
+	// 	return
+	// }
+	_, err := app.Send(userID, manuscriptID, commands.ReviewManuscript{})
+	if err != nil {
+		slog.Error("manuscript submission review request error", err, "user_id", userID.String(), "manuscript_id", manuscriptID.String())
+		manageError(w, err)
+		return
+	}
+	slog.Info("manuscript submission reviewed", "user_id", userID.String(), "manuscript_id", manuscriptID)
 	writeJson(w, "")
 }
 
 func handleManuscript(w http.ResponseWriter, r *http.Request) {
-	userId, err := extractUserId(r)
+	userId, err := extractUserID(r)
 	if err != nil {
 		manageError(w, err)
 		return
@@ -115,6 +137,11 @@ func handleManuscript(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "POST" && len(urlParts) == 5 && urlParts[4] == "cancel-submission" {
 		handleCancelManuscriptSubmission(userId, application.ManuscriptID(manuscriptID), w, r)
+		return
+	}
+
+	if r.Method == "POST" && len(urlParts) == 5 && urlParts[4] == "review" {
+		handleManuscriptReviewSubmission(userId, application.ManuscriptID(manuscriptID), w, r)
 		return
 	}
 

@@ -59,8 +59,10 @@ func handleUsersFuncs() {
 	http.HandleFunc("/api/users", handleUsers)
 }
 
-func extractUserId(r *http.Request) (application.UserID, error) {
-	userId := r.Header.Get("X-User-Id")
+const UserIDHeader = "X-User-Id"
+
+func extractUserID(r *http.Request) (application.UserID, error) {
+	userId := r.Header.Get(UserIDHeader)
 	if userId == "" {
 		return application.UserID{}, errors.New("user id not found")
 	}

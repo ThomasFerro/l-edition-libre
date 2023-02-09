@@ -12,6 +12,14 @@ import (
 	"github.com/cucumber/godog"
 )
 
+func aWriterSubmittedAManuscript(ctx context.Context, manuscriptName string) (context.Context, error) {
+	ctx, err := authentifyAsWriter(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return sumbitManuscript(ctx, manuscriptName)
+}
+
 func sumbitManuscript(ctx context.Context, manuscriptName string) (context.Context, error) {
 	var newManuscript api.SubmitManuscriptResponseDto
 	ctx, err := helpers.Call(ctx, "http://localhost:8080/api/manuscripts", http.MethodPost, api.SubmitManuscriptRequestDto{
@@ -67,17 +75,24 @@ func shouldBeCanceled(ctx context.Context, manuscriptName string) (context.Conte
 	return manuscriptStatusShouldBe(ctx, manuscriptName, domain.Canceled)
 }
 
+func isEventuallyPublished(ctx context.Context, manuscriptName string) (context.Context, error) {
+	// TODO: Gérer l'asynchrone en testant l'état de la publication créée
+	return manuscriptStatusShouldBe(ctx, manuscriptName, domain.Reviewed)
+}
+
 func tryGetStatus(ctx context.Context, manuscriptName string) (context.Context, error) {
 	ctx, _, err := getManuscriptStatus(ctx, manuscriptName)
 	return ctx, err
 }
 
 func ManuscriptSteps(ctx *godog.ScenarioContext) {
-	ctx.Step(`I submit a PDF manuscript for "(.+?)"`, sumbitManuscript)
-	ctx.Step(`I submitted a PDF manuscript for "(.+?)"`, sumbitManuscript)
+	ctx.Step(`^a writer submitted a manuscript for "(.+?)"$`, aWriterSubmittedAManuscript)
+	ctx.Step(`I submit a manuscript for "(.+?)"`, sumbitManuscript)
+	ctx.Step(`I submitted a manuscript for "(.+?)"`, sumbitManuscript)
 	ctx.Step(`I cancel the submission of "(.+?)"`, cancelManuscriptSubmission)
 	ctx.Step(`submission of "(.+?)" was canceled`, cancelManuscriptSubmission)
 	ctx.Step(`"(.+?)" is pending review from the editor`, shouldBePendingReview)
+	ctx.Step(`^"([^"]*)" is eventually published$`, isEventuallyPublished)
 	ctx.Step(`submission of "(.+?)" is canceled`, shouldBeCanceled)
 	ctx.Step(`I try to get the submission status of "(.+?)"`, tryGetStatus)
 }

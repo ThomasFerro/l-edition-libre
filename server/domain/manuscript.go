@@ -14,6 +14,7 @@ type Status string
 const (
 	PendingReview Status = "PendingReview"
 	Canceled      Status = "Canceled"
+	Reviewed      Status = "Reviewed"
 )
 
 func (m Manuscript) applyManuscriptSubmitted(event events.ManuscriptSubmitted) Manuscript {
@@ -22,6 +23,10 @@ func (m Manuscript) applyManuscriptSubmitted(event events.ManuscriptSubmitted) M
 }
 func (m Manuscript) applyManuscriptSubmissionCanceled(event events.ManuscriptSubmissionCanceled) Manuscript {
 	m.Status = Canceled
+	return m
+}
+func (m Manuscript) applyManuscriptReviewed(event events.ManuscriptReviewed) Manuscript {
+	m.Status = Reviewed
 	return m
 }
 

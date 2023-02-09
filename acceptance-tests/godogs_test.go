@@ -41,6 +41,7 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 
 	steps.AuthenticationSteps(ctx)
 	steps.ManuscriptSteps(ctx)
+	steps.EditorSteps(ctx)
 	steps.ErrorSteps(ctx)
 }
 

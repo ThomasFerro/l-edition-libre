@@ -28,9 +28,13 @@ func (app Application) manageCommandReturn(userID UserID, manuscriptID Manuscrip
 func (app Application) Send(userID UserID, manuscriptID ManuscriptID, command commands.Command) ([]events.Event, error) {
 	slog.Info("receiving command", "type", fmt.Sprintf("%T", command), "manuscript_id", manuscriptID, "command", command)
 	// TODO: Simplifier en jouant avec l'interface de la commande ?
+	// FIXME: Cette gestion par userID ne fonctionne pas, plusieurs utilisateurs agissent sur le même manuscrit
 	switch typedCommand := command.(type) {
 	case commands.SubmitManuscript:
 		newEvents, commandError := commands.HandleSubmitManuscript(typedCommand)
+		return app.manageCommandReturn(userID, manuscriptID, newEvents, commandError)
+	case commands.ReviewManuscript:
+		newEvents, commandError := commands.HandleReviewManuscript(typedCommand)
 		return app.manageCommandReturn(userID, manuscriptID, newEvents, commandError)
 	case commands.CancelManuscriptSubmission:
 		history, err := app.history.For(userID, manuscriptID)

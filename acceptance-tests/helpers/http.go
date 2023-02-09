@@ -83,8 +83,7 @@ func addUserHeader(ctx context.Context, request *http.Request) {
 	if !ok {
 		return
 	}
-	// TODO: Variabiliser le header?
-	request.Header.Add("X-User-Id", currentUser.String())
+	request.Header.Add(api.UserIDHeader, currentUser.String())
 }
 
 func Call(ctx context.Context, url string, method string, body interface{}, responseDto interface{}) (context.Context, error) {
