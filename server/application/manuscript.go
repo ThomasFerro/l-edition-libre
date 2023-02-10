@@ -2,6 +2,7 @@ package application
 
 import (
 	"github.com/ThomasFerro/l-edition-libre/domain"
+	"github.com/ThomasFerro/l-edition-libre/events"
 	"github.com/google/uuid"
 )
 
@@ -21,4 +22,19 @@ func NewManuscriptID() ManuscriptID {
 
 type Manuscripts interface {
 	Persists(ManuscriptID, domain.Manuscript) error
+}
+
+func isTheManuscriptWriter(history ManuscriptsHistory, userID UserID, manuscriptID ManuscriptID) (bool, error) {
+	forManuscript, err := history.For(manuscriptID)
+	if err != nil {
+		return false, err
+	}
+	for _, nextEvent := range forManuscript {
+		_, isTheWriter := nextEvent.(events.ManuscriptSubmitted)
+		// TODO: Chercher dans les métadonnées ?
+		if isTheWriter {
+			return true, nil
+		}
+	}
+	return false, nil
 }

@@ -2,11 +2,13 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 
+	"github.com/ThomasFerro/l-edition-libre/api/helpers"
+	"github.com/ThomasFerro/l-edition-libre/api/middlewares"
 	"github.com/ThomasFerro/l-edition-libre/application"
+	"github.com/ThomasFerro/l-edition-libre/commands"
 	"golang.org/x/exp/slog"
 )
 
@@ -25,22 +27,22 @@ func handleAccountCreation(w http.ResponseWriter, r *http.Request) {
 	slog.Info("receiving account creation request", "body", dto)
 	if err != nil {
 		slog.Error("account creation request dto decoding error", err)
-		manageError(w, err)
+		helpers.ManageError(w, err)
 		return
 	}
 
 	newUserID := application.NewUserID()
-	// TODO
-	// _, err = app.Send(newUserID, commands.CreateAccount{
-	// 	DisplayedName: dto.DisplayedName,
-	// })
+	app := middlewares.ApplicationFromRequest(r)
+	_, err = app.SendUserCommand(newUserID, commands.CreateAccount{
+		DisplayedName: dto.DisplayedName,
+	})
 	if err != nil {
 		slog.Error("account creation request error", err)
-		manageError(w, err)
+		helpers.ManageError(w, err)
 		return
 	}
 	slog.Info("acount created", "user_id", newUserID.String())
-	writeJson(w, CreateAccountResponseDto{
+	helpers.WriteJson(w, CreateAccountResponseDto{
 		Id: newUserID.String(),
 	})
 }
@@ -55,16 +57,6 @@ func handleUsers(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handleUsersFuncs() {
-	http.HandleFunc("/api/users", handleUsers)
-}
-
-const UserIDHeader = "X-User-Id"
-
-func extractUserID(r *http.Request) (application.UserID, error) {
-	userId := r.Header.Get(UserIDHeader)
-	if userId == "" {
-		return application.UserID{}, errors.New("user id not found")
-	}
-	return application.ParseUserID(userId)
+func handleUsersFuncs(app application.Application) {
+	http.HandleFunc("/api/users", middlewares.InjectApplication(app, handleUsers))
 }

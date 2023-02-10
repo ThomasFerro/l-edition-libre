@@ -24,7 +24,7 @@ Feature: Submit a manusript
     Then the error "AManuscriptShouldBePendingReviewForItsSubmissionToBeCanceled" is thrown
 
   @Error @Users
-  Scenario: Only the writer of a manuscript see its submission status
+  Scenario: Only the writer of a manuscript can see its submission status
     Given I submitted a manuscript for "My first novel"
     And I am authentified as another writer
     When I try to get the submission status of "My first novel"

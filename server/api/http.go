@@ -8,15 +8,13 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-var app application.Application
-
 func Start() {
 	slog.Info("start new application")
-	app = application.NewApplication(persistency.NewManuscriptsHistory())
+	app := application.NewApplication(persistency.NewManuscriptsHistory(), persistency.NewUsersHistory())
 	slog.Info("setup HTTP API")
 
-	handleManuscriptsFuncs()
-	handleUsersFuncs()
+	handleManuscriptsFuncs(app)
+	handleUsersFuncs(app)
 
 	// TODO: Variabiliser le port
 	slog.Info("HTTP API start listening")

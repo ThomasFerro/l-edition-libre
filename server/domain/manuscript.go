@@ -39,6 +39,8 @@ func Rehydrate(history []events.Event) Manuscript {
 			manuscript = manuscript.applyManuscriptSubmitted(typedEvent)
 		case events.ManuscriptSubmissionCanceled:
 			manuscript = manuscript.applyManuscriptSubmissionCanceled(typedEvent)
+		case events.ManuscriptReviewed:
+			manuscript = manuscript.applyManuscriptReviewed(typedEvent)
 		default:
 			slog.Warn("unknown manuscript event", "event", typedEvent)
 		}

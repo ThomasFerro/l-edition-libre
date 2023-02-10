@@ -9,7 +9,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/ThomasFerro/l-edition-libre/api"
+	"github.com/ThomasFerro/l-edition-libre/api/helpers"
+	"github.com/ThomasFerro/l-edition-libre/api/middlewares"
 	"github.com/ThomasFerro/l-edition-libre/application"
 	"github.com/cucumber/messages-go/v16"
 )
@@ -47,7 +48,7 @@ func handleHttpError(ctx context.Context, response *http.Response) (context.Cont
 				return ctx, false, fmt.Errorf("body read error: %v", err)
 			}
 
-			var httpErrorMessage api.HttpErrorMessage
+			var httpErrorMessage helpers.HttpErrorMessage
 			err = json.Unmarshal(body, &httpErrorMessage)
 			if err != nil {
 				return ctx, false, fmt.Errorf("body unmarshal error: %v (body: %v)", err, string(body))
@@ -83,7 +84,7 @@ func addUserHeader(ctx context.Context, request *http.Request) {
 	if !ok {
 		return
 	}
-	request.Header.Add(api.UserIDHeader, currentUser.String())
+	request.Header.Add(middlewares.UserIDHeader, currentUser.String())
 }
 
 func Call(ctx context.Context, url string, method string, body interface{}, responseDto interface{}) (context.Context, error) {
