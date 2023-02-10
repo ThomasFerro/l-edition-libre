@@ -1,22 +1,40 @@
 package application
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/ThomasFerro/l-edition-libre/commands"
+	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"github.com/ThomasFerro/l-edition-libre/events"
 	"github.com/ThomasFerro/l-edition-libre/queries"
 	"golang.org/x/exp/slog"
 )
 
 // TODO: un history générique ?
+type EventContext struct {
+	UserID
+}
+type ContextualizedEvent struct {
+	Event   events.Event
+	Context EventContext
+}
+
+func ToEvents(toMap []ContextualizedEvent) []events.Event {
+	returned := make([]events.Event, 0)
+	for _, nextEvent := range toMap {
+		returned = append(returned, nextEvent.Event)
+	}
+	return returned
+}
+
 type UsersHistory interface {
-	For(UserID) ([]events.Event, error)
-	Append(UserID, []events.Event) error
+	For(UserID) ([]ContextualizedEvent, error)
+	Append(UserID, []ContextualizedEvent) error
 }
 type ManuscriptsHistory interface {
-	For(ManuscriptID) ([]events.Event, error)
-	Append(ManuscriptID, []events.Event) error
+	For(ManuscriptID) ([]ContextualizedEvent, error)
+	Append(ManuscriptID, []ContextualizedEvent) error
 }
 
 type Application struct {
@@ -24,18 +42,34 @@ type Application struct {
 	usersHistory       UsersHistory
 }
 
-func (app Application) manageManuscriptCommandReturn(manuscriptID ManuscriptID, newEvents []events.Event, err error) ([]events.Event, error) {
+func (app Application) manageManuscriptCommandReturn(ctx context.Context, manuscriptID ManuscriptID, newEvents []events.Event, err error) ([]events.Event, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newEvents, app.manuscriptsHistory.Append(manuscriptID, newEvents)
+
+	contextualizedEvents := make([]ContextualizedEvent, len(newEvents))
+	for index, nextEvent := range newEvents {
+		contextualizedEvents[index] = ContextualizedEvent{
+			Event: nextEvent,
+			Context: EventContext{
+				UserID: ctx.Value(contexts.UserIDContextKey).(UserID),
+			},
+		}
+	}
+	return newEvents, app.manuscriptsHistory.Append(manuscriptID, contextualizedEvents)
 }
 
 func (app Application) manageUserCommandReturn(userID UserID, newEvents []events.Event, err error) ([]events.Event, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newEvents, app.usersHistory.Append(userID, newEvents)
+	contextualizedEvents := make([]ContextualizedEvent, len(newEvents))
+	for index, nextEvent := range newEvents {
+		contextualizedEvents[index] = ContextualizedEvent{
+			Event: nextEvent,
+		}
+	}
+	return newEvents, app.usersHistory.Append(userID, contextualizedEvents)
 }
 
 func (app Application) UserHaveAccessToManuscript(userID UserID, manuscriptID ManuscriptID) (bool, error) {
@@ -66,27 +100,30 @@ func (app Application) SendUserCommand(userID UserID, command commands.Command) 
 	case commands.CreateAccount:
 		newEvents, commandError := commands.HandleCreateAccount(typedCommand)
 		return app.manageUserCommandReturn(userID, newEvents, commandError)
+	case commands.PromoteUserToEditor:
+		newEvents, commandError := commands.HandlePromoteUserToEditor(typedCommand)
+		return app.manageUserCommandReturn(userID, newEvents, commandError)
 	default:
 		return nil, fmt.Errorf("unmanaged command type %T", command)
 	}
 }
 
-func (app Application) SendManuscriptCommand(manuscriptID ManuscriptID, command commands.Command) ([]events.Event, error) {
+func (app Application) SendManuscriptCommand(ctx context.Context, manuscriptID ManuscriptID, command commands.Command) ([]events.Event, error) {
 	slog.Info("receiving command", "type", fmt.Sprintf("%T", command), "manuscript_id", manuscriptID, "command", command)
 	switch typedCommand := command.(type) {
 	case commands.SubmitManuscript:
 		newEvents, commandError := commands.HandleSubmitManuscript(typedCommand)
-		return app.manageManuscriptCommandReturn(manuscriptID, newEvents, commandError)
+		return app.manageManuscriptCommandReturn(ctx, manuscriptID, newEvents, commandError)
 	case commands.ReviewManuscript:
 		newEvents, commandError := commands.HandleReviewManuscript(typedCommand)
-		return app.manageManuscriptCommandReturn(manuscriptID, newEvents, commandError)
+		return app.manageManuscriptCommandReturn(ctx, manuscriptID, newEvents, commandError)
 	case commands.CancelManuscriptSubmission:
 		history, err := app.manuscriptsHistory.For(manuscriptID)
 		if err != nil {
 			return nil, err
 		}
-		newEvents, err := commands.HandleCancelManuscriptSubmission(history, typedCommand)
-		return app.manageManuscriptCommandReturn(manuscriptID, newEvents, err)
+		newEvents, err := commands.HandleCancelManuscriptSubmission(ToEvents(history), typedCommand)
+		return app.manageManuscriptCommandReturn(ctx, manuscriptID, newEvents, err)
 	default:
 		return nil, fmt.Errorf("unmanaged command type %T", command)
 	}
@@ -101,7 +138,7 @@ func (app Application) Query(manuscriptID ManuscriptID, query queries.Query) (in
 	}
 	switch typedQuery := query.(type) {
 	case queries.ManuscriptStatus:
-		return queries.GetManuscriptStatus(history, typedQuery)
+		return queries.GetManuscriptStatus(ToEvents(history), typedQuery)
 	default:
 		return nil, fmt.Errorf("unmanaged query type %T", query)
 	}

@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	apiContext "github.com/ThomasFerro/l-edition-libre/api/context"
 	"github.com/ThomasFerro/l-edition-libre/application"
+	"github.com/ThomasFerro/l-edition-libre/contexts"
 )
 
 func ExtractManuscriptId(next http.HandlerFunc) http.HandlerFunc {
@@ -17,7 +17,7 @@ func ExtractManuscriptId(next http.HandlerFunc) http.HandlerFunc {
 		}
 		urlParts := strings.Split(r.URL.String(), "/")
 		manuscriptID := application.MustParseManuscriptID(urlParts[3])
-		r = r.WithContext(context.WithValue(r.Context(), apiContext.ManuscriptIDContextKey, manuscriptID))
+		r = r.WithContext(context.WithValue(r.Context(), contexts.ManuscriptIDContextKey, manuscriptID))
 		next(w, r)
 	}
 }

@@ -1,4 +1,4 @@
-package context
+package contexts
 
 const UserIDContextKey = "UserID"
 const ManuscriptIDContextKey = "ManuscriptID"

@@ -4,14 +4,14 @@ import (
 	"context"
 	"net/http"
 
-	apiContext "github.com/ThomasFerro/l-edition-libre/api/context"
 	"github.com/ThomasFerro/l-edition-libre/application"
+	"github.com/ThomasFerro/l-edition-libre/contexts"
 )
 
 const UserIDHeader = "X-User-Id"
 
 func UserIdFromRequest(r *http.Request) application.UserID {
-	return r.Context().Value(apiContext.UserIDContextKey).(application.UserID)
+	return r.Context().Value(contexts.UserIDContextKey).(application.UserID)
 }
 
 func ExtractUserID(next http.HandlerFunc) http.HandlerFunc {
@@ -25,7 +25,8 @@ func ExtractUserID(next http.HandlerFunc) http.HandlerFunc {
 			http.Error(w, "Malformed user id", http.StatusBadRequest)
 			return
 		}
-		r = r.WithContext(context.WithValue(r.Context(), apiContext.UserIDContextKey, parsed))
+
+		r = r.WithContext(context.WithValue(r.Context(), contexts.UserIDContextKey, parsed))
 		next(w, r)
 	}
 }

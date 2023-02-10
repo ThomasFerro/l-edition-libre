@@ -32,7 +32,7 @@ func userIsAnEditor(history UsersHistory, userID UserID) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	for _, nextEvent := range forUser {
+	for _, nextEvent := range ToEvents(forUser) {
 		_, isAUserEditorEvent := nextEvent.(events.UserPromotedToEditor)
 		if isAUserEditorEvent {
 			return true, nil

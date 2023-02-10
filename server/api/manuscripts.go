@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ThomasFerro/l-edition-libre/api/context"
 	"github.com/ThomasFerro/l-edition-libre/api/helpers"
 	"github.com/ThomasFerro/l-edition-libre/api/middlewares"
 	"github.com/ThomasFerro/l-edition-libre/application"
 	"github.com/ThomasFerro/l-edition-libre/commands"
+	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"github.com/ThomasFerro/l-edition-libre/domain"
 	"github.com/ThomasFerro/l-edition-libre/queries"
 	"golang.org/x/exp/slog"
@@ -37,7 +37,7 @@ func handleManuscriptCreation(w http.ResponseWriter, r *http.Request) {
 
 	newManuscriptID := application.NewManuscriptID()
 	app := middlewares.ApplicationFromRequest(r)
-	_, err = app.SendManuscriptCommand(application.ManuscriptID(newManuscriptID), commands.SubmitManuscript{
+	_, err = app.SendManuscriptCommand(r.Context(), application.ManuscriptID(newManuscriptID), commands.SubmitManuscript{
 		ManuscriptName: dto.ManuscriptName,
 	})
 	if err != nil {
@@ -89,7 +89,7 @@ func handleGetManuscriptState(manuscriptID application.ManuscriptID, w http.Resp
 func handleCancelManuscriptSubmission(manuscriptID application.ManuscriptID, w http.ResponseWriter, r *http.Request) {
 	slog.Info("manuscript submission cancelling request", "manuscript_id", manuscriptID.String())
 	app := middlewares.ApplicationFromRequest(r)
-	_, err := app.SendManuscriptCommand(manuscriptID, commands.CancelManuscriptSubmission{})
+	_, err := app.SendManuscriptCommand(r.Context(), manuscriptID, commands.CancelManuscriptSubmission{})
 	if err != nil {
 		slog.Error("manuscript submission cancelling request error", err, "manuscript_id", manuscriptID.String())
 		helpers.ManageError(w, err)
@@ -112,7 +112,7 @@ func handleManuscriptReviewSubmission(manuscriptID application.ManuscriptID, w h
 	// 	return
 	// }
 	app := middlewares.ApplicationFromRequest(r)
-	_, err := app.SendManuscriptCommand(manuscriptID, commands.ReviewManuscript{})
+	_, err := app.SendManuscriptCommand(r.Context(), manuscriptID, commands.ReviewManuscript{})
 	if err != nil {
 		slog.Error("manuscript submission review request error", err, "manuscript_id", manuscriptID.String())
 		helpers.ManageError(w, err)
@@ -125,7 +125,7 @@ func handleManuscriptReviewSubmission(manuscriptID application.ManuscriptID, w h
 func handleManuscript(w http.ResponseWriter, r *http.Request) {
 	// TODO: Dev un routing plus user friendly ou en utiliser un déjà dispo
 	urlParts := strings.Split(r.URL.String(), "/")
-	manuscriptID := r.Context().Value(context.ManuscriptIDContextKey).(application.ManuscriptID)
+	manuscriptID := r.Context().Value(contexts.ManuscriptIDContextKey).(application.ManuscriptID)
 
 	if r.Method == "GET" && len(urlParts) == 4 {
 		handleGetManuscriptState(application.ManuscriptID(manuscriptID), w, r)
@@ -147,7 +147,7 @@ func handleManuscript(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleManuscriptsFuncs(app application.Application) {
-	http.HandleFunc("/api/manuscripts", middlewares.InjectApplication(app, handleManuscripts))
+	http.HandleFunc("/api/manuscripts", middlewares.InjectApplication(app, middlewares.ExtractUserID(handleManuscripts)))
 	http.HandleFunc("/api/manuscripts/",
 		middlewares.InjectApplication(app, middlewares.ExtractUserID(
 			middlewares.ExtractManuscriptId(

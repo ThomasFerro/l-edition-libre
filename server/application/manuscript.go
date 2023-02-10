@@ -30,9 +30,11 @@ func isTheManuscriptWriter(history ManuscriptsHistory, userID UserID, manuscript
 		return false, err
 	}
 	for _, nextEvent := range forManuscript {
-		_, isTheWriter := nextEvent.(events.ManuscriptSubmitted)
-		// TODO: Chercher dans les métadonnées ?
-		if isTheWriter {
+		_, manuscriptSubmittedEvent := nextEvent.Event.(events.ManuscriptSubmitted)
+		if !manuscriptSubmittedEvent {
+			continue
+		}
+		if nextEvent.Context.UserID == userID {
 			return true, nil
 		}
 	}

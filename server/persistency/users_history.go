@@ -2,21 +2,20 @@ package persistency
 
 import (
 	"github.com/ThomasFerro/l-edition-libre/application"
-	"github.com/ThomasFerro/l-edition-libre/events"
 )
 
 type UsersHistory struct {
-	history map[application.UserID][]events.Event
+	history map[application.UserID][]application.ContextualizedEvent
 }
 
-func (users UsersHistory) For(userID application.UserID) ([]events.Event, error) {
+func (users UsersHistory) For(userID application.UserID) ([]application.ContextualizedEvent, error) {
 	return users.history[userID], nil
 }
 
-func (users UsersHistory) Append(userID application.UserID, newEvents []events.Event) error {
+func (users UsersHistory) Append(userID application.UserID, newEvents []application.ContextualizedEvent) error {
 	persistedEvents, exists := users.history[userID]
 	if !exists {
-		persistedEvents = make([]events.Event, 0)
+		persistedEvents = make([]application.ContextualizedEvent, 0)
 	}
 	persistedEvents = append(persistedEvents, newEvents...)
 	users.history[userID] = persistedEvents
@@ -25,6 +24,6 @@ func (users UsersHistory) Append(userID application.UserID, newEvents []events.E
 
 func NewUsersHistory() UsersHistory {
 	return UsersHistory{
-		history: make(map[application.UserID][]events.Event),
+		history: make(map[application.UserID][]application.ContextualizedEvent),
 	}
 }

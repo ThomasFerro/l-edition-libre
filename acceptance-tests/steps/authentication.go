@@ -16,8 +16,11 @@ func authentifyAsWriter(ctx context.Context) (context.Context, error) {
 }
 
 func authentifyAsEditor(ctx context.Context) (context.Context, error) {
-	// TODO: Ajouter le droit
-	return authentifyAs(ctx, "Editor")
+	ctx, err := authentifyAs(ctx, "Editor")
+	if err != nil {
+		return ctx, fmt.Errorf("unable to authentify: %v", err)
+	}
+	return helpers.Call(ctx, "http://localhost:8080/api/users/promote-to-editor", http.MethodPost, nil, nil)
 }
 
 func authentifyAs(ctx context.Context, displayedName string) (context.Context, error) {
