@@ -1,9 +1,11 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/ThomasFerro/l-edition-libre/application"
+	"github.com/ThomasFerro/l-edition-libre/configuration"
 	"github.com/ThomasFerro/l-edition-libre/persistency"
 	"golang.org/x/exp/slog"
 )
@@ -16,7 +18,7 @@ func Start() {
 	handleManuscriptsFuncs(app)
 	handleUsersFuncs(app)
 
-	// TODO: Variabiliser le port
 	slog.Info("HTTP API start listening")
-	http.ListenAndServe(":8080", nil)
+	port := configuration.GetConfiguration(configuration.PORT)
+	http.ListenAndServe(fmt.Sprintf(":%v", port), nil)
 }
