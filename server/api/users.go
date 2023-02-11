@@ -2,12 +2,11 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/ThomasFerro/l-edition-libre/api/helpers"
 	"github.com/ThomasFerro/l-edition-libre/api/middlewares"
+	"github.com/ThomasFerro/l-edition-libre/api/router"
 	"github.com/ThomasFerro/l-edition-libre/application"
 	"github.com/ThomasFerro/l-edition-libre/commands"
 	"golang.org/x/exp/slog"
@@ -48,16 +47,6 @@ func handleAccountCreation(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func handleUsers(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case "POST":
-		handleAccountCreation(w, r)
-	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		fmt.Fprintf(w, "invalid_http_method")
-	}
-}
-
 func handlePromoteToEditor(w http.ResponseWriter, r *http.Request) {
 	userID := middlewares.UserIdFromRequest(r)
 	slog.Info("receiving promotion to editor request", "user_id", userID)
@@ -73,20 +62,26 @@ func handlePromoteToEditor(w http.ResponseWriter, r *http.Request) {
 	helpers.WriteJson(w, "")
 }
 
-func handleUser(w http.ResponseWriter, r *http.Request) {
-	// TODO: Dev un routing plus user friendly ou en utiliser un déjà dispo
-	urlParts := strings.Split(r.URL.String(), "/")
-
-	if r.Method == "POST" && len(urlParts) == 4 && urlParts[3] == "promote-to-editor" {
-		middlewares.RequiresAdminApiKey(handlePromoteToEditor)(w, r)
-		return
-	}
-	w.WriteHeader(http.StatusMethodNotAllowed)
-	fmt.Fprintf(w, "invalid_http_method")
-
-}
-
 func handleUsersFuncs(app application.Application) {
-	http.HandleFunc("/api/users", middlewares.InjectApplication(app, handleUsers))
-	http.HandleFunc("/api/users/", middlewares.InjectApplication(app, middlewares.ExtractUserID(handleUser)))
+	routes := []router.Route{
+		{
+			Path:   "/api/users",
+			Method: "POST",
+			Middlewares: []middlewares.Middleware{
+				middlewares.InjectApplication(app),
+			},
+			Handler: handleAccountCreation,
+		},
+		{
+			Path:   "/api/users/:userID",
+			Method: "POST",
+			Middlewares: []middlewares.Middleware{
+				middlewares.RequiresAdminApiKey,
+				middlewares.ExtractUserID,
+				middlewares.InjectApplication(app),
+			},
+			Handler: handlePromoteToEditor,
+		},
+	}
+	router.HandleRoutes(routes)
 }
