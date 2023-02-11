@@ -3,14 +3,20 @@ package commands
 import (
 	"fmt"
 
+	"github.com/ThomasFerro/l-edition-libre/domain"
 	"github.com/ThomasFerro/l-edition-libre/events"
 )
 
 type ReviewManuscript struct {
 }
 
-func HandleReviewManuscript(command ReviewManuscript) ([]events.Event, CommandError) {
-	// TODO: Vérifier le status
+func HandleReviewManuscript(history []events.Event, command ReviewManuscript) ([]events.Event, CommandError) {
+	manuscript := domain.Rehydrate(history)
+	if manuscript.Status != domain.PendingReview {
+		return nil, AManuscriptShouldBePendingReviewToBeReviewed{
+			actualStatus: manuscript.Status,
+		}
+	}
 	return []events.Event{
 		events.ManuscriptReviewed{},
 	}, nil
@@ -18,4 +24,16 @@ func HandleReviewManuscript(command ReviewManuscript) ([]events.Event, CommandEr
 
 func (c ReviewManuscript) String() string {
 	return fmt.Sprintf("ReviewManuscript{}")
+}
+
+type AManuscriptShouldBePendingReviewToBeReviewed struct {
+	actualStatus domain.Status
+}
+
+func (commandError AManuscriptShouldBePendingReviewToBeReviewed) Error() string {
+	return fmt.Sprintf("manuscript should be pending review to be reviewed (%v)", commandError.actualStatus)
+}
+
+func (commandError AManuscriptShouldBePendingReviewToBeReviewed) Name() string {
+	return "AManuscriptShouldBePendingReviewToBeReviewed"
 }

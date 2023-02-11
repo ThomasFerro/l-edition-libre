@@ -110,19 +110,22 @@ func (app Application) SendUserCommand(userID UserID, command commands.Command) 
 
 func (app Application) SendManuscriptCommand(ctx context.Context, manuscriptID ManuscriptID, command commands.Command) ([]events.Event, error) {
 	slog.Info("receiving command", "type", fmt.Sprintf("%T", command), "manuscript_id", manuscriptID, "command", command)
+
+	history, err := app.manuscriptsHistory.For(manuscriptID)
+	if err != nil {
+		return nil, err
+	}
+	eventsHistory := ToEvents(history)
+
 	switch typedCommand := command.(type) {
 	case commands.SubmitManuscript:
 		newEvents, commandError := commands.HandleSubmitManuscript(typedCommand)
 		return app.manageManuscriptCommandReturn(ctx, manuscriptID, newEvents, commandError)
 	case commands.ReviewManuscript:
-		newEvents, commandError := commands.HandleReviewManuscript(typedCommand)
+		newEvents, commandError := commands.HandleReviewManuscript(eventsHistory, typedCommand)
 		return app.manageManuscriptCommandReturn(ctx, manuscriptID, newEvents, commandError)
 	case commands.CancelManuscriptSubmission:
-		history, err := app.manuscriptsHistory.For(manuscriptID)
-		if err != nil {
-			return nil, err
-		}
-		newEvents, err := commands.HandleCancelManuscriptSubmission(ToEvents(history), typedCommand)
+		newEvents, err := commands.HandleCancelManuscriptSubmission(eventsHistory, typedCommand)
 		return app.manageManuscriptCommandReturn(ctx, manuscriptID, newEvents, err)
 	default:
 		return nil, fmt.Errorf("unmanaged command type %T", command)
