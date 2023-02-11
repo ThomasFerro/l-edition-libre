@@ -7,7 +7,9 @@ import (
 	"net/http"
 
 	"github.com/ThomasFerro/l-edition-libre/api"
+	"github.com/ThomasFerro/l-edition-libre/api/middlewares"
 	"github.com/ThomasFerro/l-edition-libre/application"
+	"github.com/ThomasFerro/l-edition-libre/configuration"
 	"github.com/cucumber/godog"
 )
 
@@ -20,7 +22,15 @@ func authentifyAsEditor(ctx context.Context) (context.Context, error) {
 	if err != nil {
 		return ctx, fmt.Errorf("unable to authentify: %v", err)
 	}
-	return helpers.Call(ctx, "http://localhost:8080/api/users/promote-to-editor", http.MethodPost, nil, nil)
+	headers := make(map[string]string, 0)
+	headers[middlewares.ApiKeyHeader] = configuration.GetConfiguration(configuration.ADMIN_API_KEY)
+	return helpers.CallWithHeaders(
+		ctx,
+		"http://localhost:8080/api/users/promote-to-editor",
+		http.MethodPost,
+		headers,
+		nil,
+		nil)
 }
 
 func authentifyAs(ctx context.Context, displayedName string) (context.Context, error) {

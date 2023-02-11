@@ -87,7 +87,13 @@ func addUserHeader(ctx context.Context, request *http.Request) {
 	request.Header.Add(middlewares.UserIDHeader, currentUser.String())
 }
 
-func Call(ctx context.Context, url string, method string, body interface{}, responseDto interface{}) (context.Context, error) {
+func addCustomHeaders(ctx context.Context, request *http.Request, headers map[string]string) {
+	for headerKey, headerValue := range headers {
+		request.Header.Add(headerKey, headerValue)
+	}
+}
+
+func CallWithHeaders(ctx context.Context, url string, method string, headers map[string]string, body interface{}, responseDto interface{}) (context.Context, error) {
 	bodyReader, err := bodyToReader(body)
 	if err != nil {
 		return ctx, fmt.Errorf("unable to create a reader from the body: %v", err)
@@ -97,6 +103,7 @@ func Call(ctx context.Context, url string, method string, body interface{}, resp
 		return ctx, fmt.Errorf("unable to create new http request: %v", err)
 	}
 	addUserHeader(ctx, request)
+	addCustomHeaders(ctx, request, headers)
 	if err != nil {
 		return ctx, fmt.Errorf("unable to add user http header: %v", err)
 	}
@@ -120,4 +127,7 @@ func Call(ctx context.Context, url string, method string, body interface{}, resp
 	}
 
 	return ctx, nil
+}
+func Call(ctx context.Context, url string, method string, body interface{}, responseDto interface{}) (context.Context, error) {
+	return CallWithHeaders(ctx, url, method, nil, body, responseDto)
 }

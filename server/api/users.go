@@ -78,7 +78,7 @@ func handleUser(w http.ResponseWriter, r *http.Request) {
 	urlParts := strings.Split(r.URL.String(), "/")
 
 	if r.Method == "POST" && len(urlParts) == 4 && urlParts[3] == "promote-to-editor" {
-		handlePromoteToEditor(w, r)
+		middlewares.RequiresAdminApiKey(handlePromoteToEditor)(w, r)
 		return
 	}
 	w.WriteHeader(http.StatusMethodNotAllowed)
@@ -88,6 +88,5 @@ func handleUser(w http.ResponseWriter, r *http.Request) {
 
 func handleUsersFuncs(app application.Application) {
 	http.HandleFunc("/api/users", middlewares.InjectApplication(app, handleUsers))
-	// TODO: Middleware avec une API-Key spéciale
 	http.HandleFunc("/api/users/", middlewares.InjectApplication(app, middlewares.ExtractUserID(handleUser)))
 }

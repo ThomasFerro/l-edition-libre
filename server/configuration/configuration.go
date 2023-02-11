@@ -9,11 +9,13 @@ import (
 type ConfigurationKey string
 
 const (
-	PORT ConfigurationKey = "PORT"
+	PORT          ConfigurationKey = "PORT"
+	ADMIN_API_KEY ConfigurationKey = "ADMIN_API_KEY"
 )
 
 var ConfigurationsWithFallback = map[ConfigurationKey]string{
-	PORT: "8080",
+	PORT:          "8080",
+	ADMIN_API_KEY: "ADMIN",
 }
 
 func GetConfiguration(configurationKey ConfigurationKey) string {
