@@ -1,12 +1,16 @@
 package domain
 
 import (
+	"fmt"
+
 	"github.com/ThomasFerro/l-edition-libre/events"
 	"golang.org/x/exp/slog"
 )
 
 type Manuscript struct {
 	Status
+	Title  string
+	Author string
 }
 
 type Status string
@@ -18,6 +22,8 @@ const (
 )
 
 func (m Manuscript) applyManuscriptSubmitted(event events.ManuscriptSubmitted) Manuscript {
+	m.Title = event.Title
+	m.Author = event.Author
 	m.Status = PendingReview
 	return m
 }
@@ -28,6 +34,9 @@ func (m Manuscript) applyManuscriptSubmissionCanceled(event events.ManuscriptSub
 func (m Manuscript) applyManuscriptReviewed(event events.ManuscriptReviewed) Manuscript {
 	m.Status = Reviewed
 	return m
+}
+func (m Manuscript) String() string {
+	return fmt.Sprintf("Manuscript{Title %v, Author %v, Status %v}", m.Title, m.Author, m.Status)
 }
 
 func Rehydrate(history []events.Event) Manuscript {

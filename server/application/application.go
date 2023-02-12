@@ -16,14 +16,27 @@ type EventContext struct {
 	UserID
 }
 type ContextualizedEvent struct {
-	Event   events.Event
-	Context EventContext
+	Event        events.Event
+	Context      EventContext
+	ManuscriptID ManuscriptID
 }
 
-func ToEvents(toMap []ContextualizedEvent) []events.Event {
+func toEvents(toMap []ContextualizedEvent) []events.Event {
 	returned := make([]events.Event, 0)
 	for _, nextEvent := range toMap {
 		returned = append(returned, nextEvent.Event)
+	}
+	return returned
+}
+
+func toEventsByManuscript(toMap map[ManuscriptID][]ContextualizedEvent) [][]events.Event {
+	returned := make([][]events.Event, 0)
+	for _, nextManuscript := range toMap {
+		mappedEvents := make([]events.Event, 0)
+		for _, nextEvent := range nextManuscript {
+			mappedEvents = append(mappedEvents, nextEvent.Event)
+		}
+		returned = append(returned, mappedEvents)
 	}
 	return returned
 }
@@ -34,6 +47,7 @@ type UsersHistory interface {
 }
 type ManuscriptsHistory interface {
 	For(ManuscriptID) ([]ContextualizedEvent, error)
+	ForAll() (map[ManuscriptID][]ContextualizedEvent, error)
 	Append(ManuscriptID, []ContextualizedEvent) error
 }
 
@@ -115,7 +129,7 @@ func (app Application) SendManuscriptCommand(ctx context.Context, manuscriptID M
 	if err != nil {
 		return nil, err
 	}
-	eventsHistory := ToEvents(history)
+	eventsHistory := toEvents(history)
 
 	switch typedCommand := command.(type) {
 	case commands.SubmitManuscript:
@@ -133,15 +147,29 @@ func (app Application) SendManuscriptCommand(ctx context.Context, manuscriptID M
 }
 
 // TODO: mieux typer le retour (générique?)
-func (app Application) Query(manuscriptID ManuscriptID, query queries.Query) (interface{}, error) {
-	slog.Info("receiving query", "type", fmt.Sprintf("%T", query), "manuscript_id", manuscriptID, "command", query)
+func (app Application) ManuscriptQuery(manuscriptID ManuscriptID, query queries.Query) (interface{}, error) {
+	slog.Info("receiving query", "type", fmt.Sprintf("%T", query), "manuscript_id", manuscriptID, "query", query)
 	history, err := app.manuscriptsHistory.For(manuscriptID)
 	if err != nil {
 		return nil, err
 	}
 	switch typedQuery := query.(type) {
 	case queries.ManuscriptStatus:
-		return queries.GetManuscriptStatus(ToEvents(history), typedQuery)
+		return queries.GetManuscriptStatus(toEvents(history), typedQuery)
+	default:
+		return nil, fmt.Errorf("unmanaged query type %T", query)
+	}
+}
+
+func (app Application) ManuscriptsQuery(query queries.Query) (interface{}, error) {
+	slog.Info("receiving query", "type", fmt.Sprintf("%T", query), "query", query)
+	history, err := app.manuscriptsHistory.ForAll()
+	if err != nil {
+		return nil, err
+	}
+	switch typedQuery := query.(type) {
+	case queries.ManuscriptsToReview:
+		return queries.GetManuscriptsToReview(toEventsByManuscript(history), typedQuery)
 	default:
 		return nil, fmt.Errorf("unmanaged query type %T", query)
 	}

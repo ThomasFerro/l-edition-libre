@@ -15,7 +15,8 @@ import (
 )
 
 type SubmitManuscriptRequestDto struct {
-	ManuscriptName string `json:"manuscript_name"`
+	Title  string `json:"title"`
+	Author string `json:"author"`
 }
 
 type SubmitManuscriptResponseDto struct {
@@ -36,7 +37,8 @@ func handleManuscriptCreation(w http.ResponseWriter, r *http.Request) {
 	newManuscriptID := application.NewManuscriptID()
 	app := middlewares.ApplicationFromRequest(r)
 	_, err = app.SendManuscriptCommand(r.Context(), application.ManuscriptID(newManuscriptID), commands.SubmitManuscript{
-		ManuscriptName: dto.ManuscriptName,
+		Title:  dto.Title,
+		Author: dto.Author,
 	})
 	if err != nil {
 		slog.Error("manuscript creation request error", err)
@@ -71,35 +73,11 @@ func handleCancelManuscriptSubmission(w http.ResponseWriter, r *http.Request) {
 	helpers.WriteJson(w, "")
 }
 
-// type ReviewManuscriptRequestDto struct{}
-
-func handleManuscriptReviewSubmission(w http.ResponseWriter, r *http.Request) {
-	// decoder := json.NewDecoder(r.Body)
-	// var dto ReviewManuscriptRequestDto
-	// err := decoder.Decode(&dto)
-	// slog.Info("manuscript submission review request", "user_id", userID.String(), "manuscript_id", manuscriptID.String(), "body", dto)
-	// if err != nil {
-	// 	slog.Error("manuscript creation request dto decoding error", err)
-	// 	helpers.ManageError(w, err)
-	// 	return
-	// }
-	manuscriptID := getManuscriptID(r)
-	app := middlewares.ApplicationFromRequest(r)
-	_, err := app.SendManuscriptCommand(r.Context(), manuscriptID, commands.ReviewManuscript{})
-	if err != nil {
-		slog.Error("manuscript submission review request error", err, "manuscript_id", manuscriptID.String())
-		helpers.ManageError(w, err)
-		return
-	}
-	slog.Info("manuscript submission reviewed", "manuscript_id", manuscriptID)
-	helpers.WriteJson(w, "")
-}
-
 func handleManuscriptState(w http.ResponseWriter, r *http.Request) {
 	manuscriptID := getManuscriptID(r)
 	slog.Info("manuscript status request", "manuscript_id", manuscriptID.String())
 	app := middlewares.ApplicationFromRequest(r)
-	queryResult, err := app.Query(manuscriptID, queries.ManuscriptStatus{})
+	queryResult, err := app.ManuscriptQuery(manuscriptID, queries.ManuscriptStatus{})
 	if err != nil {
 		slog.Error("manuscript status query error", err, "manuscript_id", manuscriptID.String())
 		helpers.ManageError(w, err)
@@ -115,7 +93,6 @@ func handleManuscriptState(w http.ResponseWriter, r *http.Request) {
 	helpers.WriteJson(w, ManuscriptDto{
 		Status: string(status),
 	})
-	return
 }
 
 func handleManuscriptsFuncs(app application.Application) {
@@ -149,6 +126,7 @@ func handleManuscriptsFuncs(app application.Application) {
 			},
 			Handler: handleCancelManuscriptSubmission,
 		},
+		// FIXME: Devrait être scoppé à l'éditeur
 		{
 			Path:   "/api/manuscripts/:manuscriptID/review",
 			Method: "POST",
@@ -158,6 +136,14 @@ func handleManuscriptsFuncs(app application.Application) {
 				middlewares.InjectApplication(app),
 			},
 			Handler: handleManuscriptReviewSubmission,
+		},
+		{
+			Path:   "/api/manuscripts/to-review",
+			Method: "GET",
+			Middlewares: []middlewares.Middleware{
+				middlewares.InjectApplication(app),
+			},
+			Handler: handleGetManuscriptsToReview,
 		},
 	}
 	router.HandleRoutes(routes)

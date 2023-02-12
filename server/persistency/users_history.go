@@ -22,7 +22,7 @@ func (users UsersHistory) Append(userID application.UserID, newEvents []applicat
 	return nil
 }
 
-func NewUsersHistory() UsersHistory {
+func NewUsersHistory() application.UsersHistory {
 	return UsersHistory{
 		history: make(map[application.UserID][]application.ContextualizedEvent),
 	}

@@ -12,6 +12,10 @@ func (manuscripts ManuscriptsHistory) For(manuscriptID application.ManuscriptID)
 	return manuscripts.history[manuscriptID], nil
 }
 
+func (manuscripts ManuscriptsHistory) ForAll() (map[application.ManuscriptID][]application.ContextualizedEvent, error) {
+	return manuscripts.history, nil
+}
+
 func (manuscripts ManuscriptsHistory) Append(manuscriptID application.ManuscriptID, newEvents []application.ContextualizedEvent) error {
 	persistedEvents, exists := manuscripts.history[manuscriptID]
 	if !exists {
@@ -22,7 +26,7 @@ func (manuscripts ManuscriptsHistory) Append(manuscriptID application.Manuscript
 	return nil
 }
 
-func NewManuscriptsHistory() ManuscriptsHistory {
+func NewManuscriptsHistory() application.ManuscriptsHistory {
 	return ManuscriptsHistory{
 		history: make(map[application.ManuscriptID][]application.ContextualizedEvent),
 	}

@@ -7,15 +7,19 @@ import (
 )
 
 type SubmitManuscript struct {
-	ManuscriptName string
+	Title  string
+	Author string
 }
 
 func HandleSubmitManuscript(command SubmitManuscript) ([]events.Event, CommandError) {
 	return []events.Event{
-		events.ManuscriptSubmitted{},
+		events.ManuscriptSubmitted{
+			Title:  command.Title,
+			Author: command.Author,
+		},
 	}, nil
 }
 
 func (c SubmitManuscript) String() string {
-	return fmt.Sprintf("SubmitManuscript{ManuscriptName %v}", c.ManuscriptName)
+	return fmt.Sprintf("SubmitManuscript{Title %v, Author %v}", c.Title, c.Author)
 }

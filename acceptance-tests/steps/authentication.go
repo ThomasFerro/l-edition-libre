@@ -17,6 +17,10 @@ func authentifyAsWriter(ctx context.Context) (context.Context, error) {
 	return authentifyAs(ctx, "Writer")
 }
 
+func authentifyAsWriterWithName(ctx context.Context, writer string) (context.Context, error) {
+	return authentifyAs(ctx, writer)
+}
+
 func authentifyAsEditor(ctx context.Context) (context.Context, error) {
 	ctx, err := authentifyAs(ctx, "Editor")
 	if err != nil {
@@ -43,11 +47,13 @@ func authentifyAs(ctx context.Context, displayedName string) (context.Context, e
 	}
 
 	newUserID := application.MustParseUserID(newUser.Id)
+	ctx = helpers.SetUserName(ctx, newUserID, displayedName)
 	return helpers.SetAuthentifiedUserID(ctx, newUserID), nil
 }
 
 func AuthenticationSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I am an authentified editor$`, authentifyAsEditor)
+	ctx.Step(`^I authentify as an editor$`, authentifyAsEditor)
 	ctx.Step(`I am an authentified writer`, authentifyAsWriter)
 	ctx.Step(`I am authentified as another writer`, authentifyAsWriter)
 }

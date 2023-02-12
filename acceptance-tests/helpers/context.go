@@ -15,6 +15,42 @@ func SetAuthentifiedUserID(ctx context.Context, userID application.UserID) conte
 	return context.WithValue(ctx, AuthentifiedUser{}, userID)
 }
 
+func GetAuthentifiedUserID(ctx context.Context) application.UserID {
+	return ctx.Value(AuthentifiedUser{}).(application.UserID)
+}
+
+type UserNameByIDKey struct{}
+type UserNameByID map[application.UserID]string
+
+func getOrCreateUserNameByIDFromContext(ctx context.Context) (context.Context, UserNameByID, error) {
+	userNameByID, ok := ctx.Value(UserNameByIDKey{}).(UserNameByID)
+	if ok {
+		return ctx, userNameByID, nil
+	}
+	newMap := UserNameByID{}
+	return context.WithValue(ctx, UserNameByIDKey{}, newMap), newMap, nil
+}
+
+func GetAuthentifiedUserName(ctx context.Context) (context.Context, string) {
+	userID := GetAuthentifiedUserID(ctx)
+	ctx, userNameByID, err := getOrCreateUserNameByIDFromContext(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	return ctx, userNameByID[userID]
+}
+
+func SetUserName(ctx context.Context, userID application.UserID, userName string) context.Context {
+	ctx, userNameByID, err := getOrCreateUserNameByIDFromContext(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	userNameByID[userID] = userName
+	return context.WithValue(ctx, UserNameByIDKey{}, userNameByID)
+}
+
 type ManuscriptIdByNameKey struct{}
 type ManuscriptIdByName map[string]application.ManuscriptID
 

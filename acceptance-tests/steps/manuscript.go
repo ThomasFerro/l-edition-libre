@@ -20,10 +20,20 @@ func aWriterSubmittedAManuscript(ctx context.Context, manuscriptName string) (co
 	return sumbitManuscript(ctx, manuscriptName)
 }
 
+func theWriterSubmittedAManuscript(ctx context.Context, writerName string, manuscriptName string) (context.Context, error) {
+	ctx, err := authentifyAsWriterWithName(ctx, writerName)
+	if err != nil {
+		return nil, err
+	}
+	return sumbitManuscript(ctx, manuscriptName)
+}
+
 func sumbitManuscript(ctx context.Context, manuscriptName string) (context.Context, error) {
 	var newManuscript api.SubmitManuscriptResponseDto
+	ctx, authentifiedUserName := helpers.GetAuthentifiedUserName(ctx)
 	ctx, err := helpers.Call(ctx, "http://localhost:8080/api/manuscripts", http.MethodPost, api.SubmitManuscriptRequestDto{
-		ManuscriptName: manuscriptName,
+		Title:  manuscriptName,
+		Author: authentifiedUserName,
 	}, &newManuscript)
 	if err != nil {
 		return ctx, fmt.Errorf("unable to submit the manuscript: %v", err)
@@ -87,6 +97,7 @@ func tryGetStatus(ctx context.Context, manuscriptName string) (context.Context, 
 
 func ManuscriptSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^a writer submitted a manuscript for "(.+?)"$`, aWriterSubmittedAManuscript)
+	ctx.Step(`^the writer "(.+?)" submitted a manuscript for "(.+?)"$`, theWriterSubmittedAManuscript)
 	ctx.Step(`I submit a manuscript for "(.+?)"`, sumbitManuscript)
 	ctx.Step(`I submitted a manuscript for "(.+?)"`, sumbitManuscript)
 	ctx.Step(`I cancel the submission of "(.+?)"`, cancelManuscriptSubmission)

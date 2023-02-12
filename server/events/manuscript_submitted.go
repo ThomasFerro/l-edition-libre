@@ -1,7 +1,12 @@
 package events
 
-type ManuscriptSubmitted struct{}
+import "fmt"
+
+type ManuscriptSubmitted struct {
+	Title  string
+	Author string
+}
 
 func (event ManuscriptSubmitted) String() string {
-	return "ManuscriptSubmitted{}"
+	return fmt.Sprintf("ManuscriptSubmitted{Title %v, Author %v}", event.Title, event.Author)
 }

@@ -4,6 +4,15 @@ Feature: Review a manusript
   I want to review manusripts
   In order to have them published
 
+  Scenario: List manuscripts to be reviewed
+    Given the writer "First author" submitted a manuscript for "My first novel"
+    And the writer "Another author" submitted a manuscript for "Another novel"
+    When I authentify as an editor
+    Then the manuscripts to be reviewed are the following
+      | Title          | Author         |
+      | My first novel | First author   |
+      | Another novel  | Another author |
+
   Scenario: Review a manuscript
     Given a writer submitted a manuscript for "My first novel"
     And I am an authentified editor
@@ -11,7 +20,7 @@ Feature: Review a manusript
     Then "My first novel" is eventually published
 
   @Error
-  Scenario: Only the manuscripts pending review can be reviewed
+  Scenario: Only manuscripts pending review can be reviewed
     Given a writer submitted a manuscript for "My first novel"
     And submission of "My first novel" was canceled
     And I am an authentified editor
@@ -20,4 +29,4 @@ Feature: Review a manusript
 
 # TODO: ManuscriptNeedsRework ?
 # TODO: Gestion des droits, un écrivain ne peut pas review
-# TODO: Liste des pending review + ouvrir le document
+# TODO: Ouvrir le document
