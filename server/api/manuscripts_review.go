@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/ThomasFerro/l-edition-libre/api/helpers"
@@ -46,7 +45,6 @@ type ManuscriptsToReviewDto struct {
 }
 
 func fromDomain(manuscripts []domain.Manuscript) ManuscriptsToReviewDto {
-	fmt.Printf("\n\n %v \n\n", manuscripts)
 	dto := ManuscriptsToReviewDto{
 		Manuscripts: make([]ManuscriptToReviewDto, 0),
 	}
@@ -63,7 +61,9 @@ func fromDomain(manuscripts []domain.Manuscript) ManuscriptsToReviewDto {
 
 func handleGetManuscriptsToReview(w http.ResponseWriter, r *http.Request) {
 	app := middlewares.ApplicationFromRequest(r)
-	queryResult, err := app.ManuscriptsQuery(queries.ManuscriptsToReview{})
+	// TODO: Autre solution à tester où on contextualise l'application
+	userID := middlewares.UserIdFromRequest(r)
+	queryResult, err := app.ManuscriptsQuery(userID, queries.ManuscriptsToReview{})
 	if err != nil {
 		slog.Error("manuscripts to review request error", err)
 		helpers.ManageError(w, err)

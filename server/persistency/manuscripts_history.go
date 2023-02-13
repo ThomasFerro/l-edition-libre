@@ -16,6 +16,22 @@ func (manuscripts ManuscriptsHistory) ForAll() (map[application.ManuscriptID][]a
 	return manuscripts.history, nil
 }
 
+func (manuscripts ManuscriptsHistory) ForAllOfUser(userID application.UserID) (map[application.ManuscriptID][]application.ContextualizedEvent, error) {
+	userHistory := map[application.ManuscriptID][]application.ContextualizedEvent{}
+	for manuscriptID, manuscriptHistory := range manuscripts.history {
+		userManuscriptHistory := []application.ContextualizedEvent{}
+		for _, manuscriptEvent := range manuscriptHistory {
+			if manuscriptEvent.Context.UserID.String() == userID.String() {
+				userManuscriptHistory = append(userManuscriptHistory, manuscriptEvent)
+			}
+		}
+		if len(userManuscriptHistory) != 0 {
+			userHistory[manuscriptID] = userManuscriptHistory
+		}
+	}
+	return userHistory, nil
+}
+
 func (manuscripts ManuscriptsHistory) Append(manuscriptID application.ManuscriptID, newEvents []application.ContextualizedEvent) error {
 	persistedEvents, exists := manuscripts.history[manuscriptID]
 	if !exists {

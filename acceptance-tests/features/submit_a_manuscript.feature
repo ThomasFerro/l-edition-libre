@@ -11,6 +11,17 @@ Feature: Submit a manusript
     When I submit a manuscript for "My first novel"
     Then "My first novel" is pending review from the editor
 
+  Scenario: List submitted manuscripts
+    Given the writer "First author" submitted a manuscript for "My first novel"
+    And the writer "First author" submitted a manuscript for "My second novel"
+    And I am an authentified writer
+    When I submit a manuscript for "Essay #1"
+    And I submit a manuscript for "Essay #2"
+    Then my manuscripts are the following
+      | Title    |
+      | Essay #1 |
+      | Essay #2 |
+
   Scenario: Cancel a manuscript submission
     Given I submitted a manuscript for "My first novel"
     When I cancel the submission of "My first novel"

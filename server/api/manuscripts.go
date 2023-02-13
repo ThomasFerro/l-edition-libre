@@ -14,6 +14,41 @@ import (
 	"golang.org/x/exp/slog"
 )
 
+type WriterManuscriptDto struct {
+	Title string `json:"title"`
+}
+type WriterManuscriptsDto struct {
+	Manuscripts []WriterManuscriptDto `json:"manuscripts"`
+}
+
+func handleGetManuscripts(w http.ResponseWriter, r *http.Request) {
+	slog.Info("writer manuscripts request")
+	app := middlewares.ApplicationFromRequest(r)
+	userID := middlewares.UserIdFromRequest(r)
+	queryResult, err := app.ManuscriptsQuery(userID, queries.WriterManuscripts{})
+	if err != nil {
+		slog.Error("writer manuscripts query error", err)
+		helpers.ManageError(w, err)
+		return
+	}
+	manuscripts, castedSuccessfuly := queryResult.([]domain.Manuscript)
+	if !castedSuccessfuly {
+		slog.Error("writer manuscripts query result casting error", err)
+		helpers.ManageError(w, err)
+		return
+	}
+
+	dto := WriterManuscriptsDto{
+		Manuscripts: []WriterManuscriptDto{},
+	}
+	for _, manuscript := range manuscripts {
+		dto.Manuscripts = append(dto.Manuscripts, WriterManuscriptDto{
+			Title: manuscript.Title,
+		})
+	}
+	helpers.WriteJson(w, dto)
+}
+
 type SubmitManuscriptRequestDto struct {
 	Title  string `json:"title"`
 	Author string `json:"author"`
@@ -107,6 +142,15 @@ func handleManuscriptsFuncs(app application.Application) {
 			Handler: handleManuscriptCreation,
 		},
 		{
+			Path:   "/api/manuscripts",
+			Method: "GET",
+			Middlewares: []middlewares.Middleware{
+				middlewares.ExtractUserID,
+				middlewares.InjectApplication(app),
+			},
+			Handler: handleGetManuscripts,
+		},
+		{
 			Path:   "/api/manuscripts/:manuscriptID",
 			Method: "GET",
 			Middlewares: []middlewares.Middleware{
@@ -126,12 +170,11 @@ func handleManuscriptsFuncs(app application.Application) {
 			},
 			Handler: handleCancelManuscriptSubmission,
 		},
-		// FIXME: Devrait être scoppé à l'éditeur
 		{
 			Path:   "/api/manuscripts/:manuscriptID/review",
 			Method: "POST",
 			Middlewares: []middlewares.Middleware{
-				middlewares.UserShouldHaveAccessToManuscript,
+				middlewares.OnlyAvailableForEditor,
 				middlewares.ExtractUserID,
 				middlewares.InjectApplication(app),
 			},
@@ -141,6 +184,7 @@ func handleManuscriptsFuncs(app application.Application) {
 			Path:   "/api/manuscripts/to-review",
 			Method: "GET",
 			Middlewares: []middlewares.Middleware{
+				middlewares.ExtractUserID,
 				middlewares.InjectApplication(app),
 			},
 			Handler: handleGetManuscriptsToReview,

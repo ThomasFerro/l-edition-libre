@@ -1,41 +1,30 @@
 package helpers
 
 import (
-	"fmt"
-
 	"github.com/cucumber/godog"
 )
-
-// FIXME: Laisser tomber cette façon de faire, on ne peut pas ajouter une méthode sur le code de prod.
-// Essayer de faire avec un json.marshal pour le moment
-type ComparableWithTableRow interface {
-	Value(attribulte string) string
-}
 
 type tableHeader struct {
 	index int
 	value string
 }
 
-func ShouldMatch[T ComparableWithTableRow](actuals []T, expected *godog.Table) error {
+func ExtractData(table *godog.Table) []map[string]string {
 	headers := make([]tableHeader, 0)
-	for index, header := range expected.Rows[0].Cells {
+	for index, header := range table.Rows[0].Cells {
 		headers = append(headers, tableHeader{
 			index: index,
 			value: header.Value,
 		})
 	}
-	for i := 1; i < len(expected.Rows); i++ {
-		row := expected.Rows[i]
-		actual := actuals[i-1]
-		// TODO: Une version avec toutes les erreurs d'un coup
-		// TODO: Essayer de faire matcher toutes les lignes sans se soucier de l'ordre
+	extracted := []map[string]string{}
+	for i := 1; i < len(table.Rows); i++ {
+		row := table.Rows[i]
+		extractedRow := make(map[string]string)
 		for _, header := range headers {
-			actualValue := actual.Value(header.value)
-			if actualValue != row.Cells[header.index].Value {
-				return fmt.Errorf("cell %v mismatch, expected %v but got %v", header.value, row.Cells[header.index].Value, actualValue)
-			}
+			extractedRow[header.value] = row.Cells[header.index].Value
 		}
+		extracted = append(extracted, extractedRow)
 	}
-	return nil
+	return extracted
 }

@@ -48,6 +48,7 @@ type UsersHistory interface {
 type ManuscriptsHistory interface {
 	For(ManuscriptID) ([]ContextualizedEvent, error)
 	ForAll() (map[ManuscriptID][]ContextualizedEvent, error)
+	ForAllOfUser(UserID) (map[ManuscriptID][]ContextualizedEvent, error)
 	Append(ManuscriptID, []ContextualizedEvent) error
 }
 
@@ -107,6 +108,10 @@ func (app Application) UserHaveAccessToManuscript(userID UserID, manuscriptID Ma
 	return false, nil
 }
 
+func (app Application) UserIsAnEditor(userID UserID) (bool, error) {
+	return userIsAnEditor(app.usersHistory, userID)
+}
+
 // TODO: Simplifier en jouant avec l'interface de la commande ? Sans avoir à envoyer d'id
 func (app Application) SendUserCommand(userID UserID, command commands.Command) ([]events.Event, error) {
 	slog.Info("receiving command", "type", fmt.Sprintf("%T", command), "user_id", userID, "command", command)
@@ -161,15 +166,21 @@ func (app Application) ManuscriptQuery(manuscriptID ManuscriptID, query queries.
 	}
 }
 
-func (app Application) ManuscriptsQuery(query queries.Query) (interface{}, error) {
+func (app Application) ManuscriptsQuery(userID UserID, query queries.Query) (interface{}, error) {
 	slog.Info("receiving query", "type", fmt.Sprintf("%T", query), "query", query)
-	history, err := app.manuscriptsHistory.ForAll()
-	if err != nil {
-		return nil, err
-	}
 	switch typedQuery := query.(type) {
 	case queries.ManuscriptsToReview:
+		history, err := app.manuscriptsHistory.ForAll()
+		if err != nil {
+			return nil, err
+		}
 		return queries.GetManuscriptsToReview(toEventsByManuscript(history), typedQuery)
+	case queries.WriterManuscripts:
+		history, err := app.manuscriptsHistory.ForAllOfUser(userID)
+		if err != nil {
+			return nil, err
+		}
+		return queries.GetWriterManuscripts(toEventsByManuscript(history), typedQuery)
 	default:
 		return nil, fmt.Errorf("unmanaged query type %T", query)
 	}

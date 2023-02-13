@@ -110,21 +110,21 @@ func customHandlerFunc(routes []Route) func(http.ResponseWriter, *http.Request) 
 }
 
 func HandleRoutes(routes []Route) {
-	parametrizedRoutes := make(map[string][]Route, 0)
+	routesByPathName := make(map[string][]Route, 0)
 	for _, nextRoute := range routes {
+		nextRoutePath := nextRoute.pathUntilFirstParametrizedSegment()
 		firstParametrizedSegment := nextRoute.firstParametrizedSegment()
 		if firstParametrizedSegment == -1 {
-			http.HandleFunc(nextRoute.Path, nextRoute.handlerWithMiddlewaresApplied())
-			continue
+			nextRoutePath = nextRoutePath[:len(nextRoutePath)-1]
 		}
 
-		if _, alreadyExist := parametrizedRoutes[nextRoute.pathUntilFirstParametrizedSegment()]; alreadyExist {
-			parametrizedRoutes[nextRoute.pathUntilFirstParametrizedSegment()] = append(parametrizedRoutes[nextRoute.pathUntilFirstParametrizedSegment()], nextRoute)
+		if _, alreadyExist := routesByPathName[nextRoutePath]; alreadyExist {
+			routesByPathName[nextRoutePath] = append(routesByPathName[nextRoutePath], nextRoute)
 		} else {
-			parametrizedRoutes[nextRoute.pathUntilFirstParametrizedSegment()] = []Route{nextRoute}
+			routesByPathName[nextRoutePath] = []Route{nextRoute}
 		}
 	}
-	for path, routes := range parametrizedRoutes {
+	for path, routes := range routesByPathName {
 		http.HandleFunc(path, customHandlerFunc(routes))
 	}
 }

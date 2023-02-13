@@ -95,6 +95,42 @@ func tryGetStatus(ctx context.Context, manuscriptName string) (context.Context, 
 	return ctx, err
 }
 
+func tableToManuscripts(table *godog.Table) []api.WriterManuscriptDto {
+	tableData := helpers.ExtractData(table)
+	returned := []api.WriterManuscriptDto{}
+	for _, row := range tableData {
+		returned = append(returned, api.WriterManuscriptDto{
+			Title: row["Title"],
+		})
+	}
+	return returned
+}
+
+func writerManuscriptsAreExpected(actual, expected []api.WriterManuscriptDto) error {
+	if len(actual) != len(expected) {
+		return fmt.Errorf("writer manuscripts mismatch\nexpected:\t%v\nactual:\t%v", expected, actual)
+	}
+	for index, nextExpected := range expected {
+		nextActual := actual[index]
+		if nextActual.Title != nextExpected.Title {
+			return fmt.Errorf("writer manuscripts mismatch\nexpected:\t%v\nactual:\t%v", expected, actual)
+		}
+	}
+	return nil
+}
+
+func myManuscriptsAreTheFollowing(ctx context.Context, table *godog.Table) (context.Context, error) {
+	url := fmt.Sprintf("http://localhost:8080/api/manuscripts")
+	var writerManuscripts api.WriterManuscriptsDto
+	ctx, err := helpers.Call(ctx, url, http.MethodGet, nil, &writerManuscripts)
+	if err != nil {
+		return ctx, fmt.Errorf("unable to get writer manuscripts: %v", err)
+	}
+
+	expected := tableToManuscripts(table)
+	return ctx, writerManuscriptsAreExpected(writerManuscripts.Manuscripts, expected)
+}
+
 func ManuscriptSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^a writer submitted a manuscript for "(.+?)"$`, aWriterSubmittedAManuscript)
 	ctx.Step(`^the writer "(.+?)" submitted a manuscript for "(.+?)"$`, theWriterSubmittedAManuscript)
@@ -106,4 +142,5 @@ func ManuscriptSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^"([^"]*)" is eventually published$`, isEventuallyPublished)
 	ctx.Step(`submission of "(.+?)" is canceled`, shouldBeCanceled)
 	ctx.Step(`I try to get the submission status of "(.+?)"`, tryGetStatus)
+	ctx.Step(`^my manuscripts are the following$`, myManuscriptsAreTheFollowing)
 }
