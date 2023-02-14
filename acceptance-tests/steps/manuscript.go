@@ -108,12 +108,12 @@ func tableToManuscripts(table *godog.Table) []api.WriterManuscriptDto {
 
 func writerManuscriptsAreExpected(actual, expected []api.WriterManuscriptDto) error {
 	if len(actual) != len(expected) {
-		return fmt.Errorf("writer manuscripts mismatch\nexpected:\t%v\nactual:\t%v", expected, actual)
+		return fmt.Errorf("writer manuscripts mismatch\nexpected:\t%v\nactual:\t\t%v", expected, actual)
 	}
 	for index, nextExpected := range expected {
 		nextActual := actual[index]
 		if nextActual.Title != nextExpected.Title {
-			return fmt.Errorf("writer manuscripts mismatch\nexpected:\t%v\nactual:\t%v", expected, actual)
+			return fmt.Errorf("writer manuscripts mismatch\nexpected:\t%v\nactual:\t\t%v", expected, actual)
 		}
 	}
 	return nil

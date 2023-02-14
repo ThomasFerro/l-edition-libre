@@ -1,4 +1,4 @@
-@Editor @Manuscript
+@Editor @Manuscript @Review
 Feature: Review a manusript
   As a edit,
   I want to review manusripts

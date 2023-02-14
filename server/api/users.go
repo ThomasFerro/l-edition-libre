@@ -32,8 +32,9 @@ func handleAccountCreation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	newUserID := application.NewUserID()
+	ctx := middlewares.SetUserId(r.Context(), newUserID)
 	app := middlewares.ApplicationFromRequest(r)
-	_, err = app.SendUserCommand(newUserID, commands.CreateAccount{
+	_, err = app.SendCommand(ctx, commands.CreateAccount{
 		DisplayedName: dto.DisplayedName,
 	})
 	if err != nil {
@@ -48,17 +49,16 @@ func handleAccountCreation(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlePromoteToEditor(w http.ResponseWriter, r *http.Request) {
-	userID := middlewares.UserIdFromRequest(r)
-	slog.Info("receiving promotion to editor request", "user_id", userID)
+	slog.Info("receiving promotion to editor request")
 
 	app := middlewares.ApplicationFromRequest(r)
-	_, err := app.SendUserCommand(userID, commands.PromoteUserToEditor{})
+	_, err := app.SendCommand(r.Context(), commands.PromoteUserToEditor{})
 	if err != nil {
 		slog.Error("promotion to editor request error", err)
 		helpers.ManageError(w, err)
 		return
 	}
-	slog.Info("user promoted to editor", "user_id", userID)
+	slog.Info("user promoted to editor")
 	helpers.WriteJson(w, "")
 }
 

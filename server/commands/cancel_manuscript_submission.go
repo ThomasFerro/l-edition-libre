@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/ThomasFerro/l-edition-libre/domain"
@@ -9,7 +10,8 @@ import (
 
 type CancelManuscriptSubmission struct{}
 
-func HandleCancelManuscriptSubmission(history []events.Event, command CancelManuscriptSubmission) ([]events.Event, CommandError) {
+func HandleCancelManuscriptSubmission(ctx context.Context, command Command) ([]events.Event, CommandError) {
+	history := historyFromContext(ctx)
 	manuscript := domain.Rehydrate(history)
 	if manuscript.Status != domain.PendingReview {
 		return nil, AManuscriptShouldBePendingReviewForItsSubmissionToBeCanceled{

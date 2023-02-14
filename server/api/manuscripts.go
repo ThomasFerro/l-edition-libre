@@ -9,6 +9,7 @@ import (
 	"github.com/ThomasFerro/l-edition-libre/api/router"
 	"github.com/ThomasFerro/l-edition-libre/application"
 	"github.com/ThomasFerro/l-edition-libre/commands"
+	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"github.com/ThomasFerro/l-edition-libre/domain"
 	"github.com/ThomasFerro/l-edition-libre/queries"
 	"golang.org/x/exp/slog"
@@ -70,8 +71,9 @@ func handleManuscriptCreation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	newManuscriptID := application.NewManuscriptID()
+	r = middlewares.SetManuscriptID(r, newManuscriptID)
 	app := middlewares.ApplicationFromRequest(r)
-	_, err = app.SendManuscriptCommand(r.Context(), application.ManuscriptID(newManuscriptID), commands.SubmitManuscript{
+	_, err = app.SendCommand(r.Context(), commands.SubmitManuscript{
 		Title:  dto.Title,
 		Author: dto.Author,
 	})
@@ -90,15 +92,12 @@ type ManuscriptDto struct {
 	Status string `json:"status"`
 }
 
-func getManuscriptID(r *http.Request) application.ManuscriptID {
-	return application.MustParseManuscriptID(helpers.FromUrlParams(r.Context(), ":manuscriptID"))
-}
-
 func handleCancelManuscriptSubmission(w http.ResponseWriter, r *http.Request) {
-	manuscriptID := getManuscriptID(r)
+	manuscriptID := r.Context().Value(contexts.ManuscriptIDContextKey).(application.ManuscriptID)
+	// TODO: slog avec le context pour ne pas avoir à remettre les params chaque fois ?
 	slog.Info("manuscript submission cancelling request", "manuscript_id", manuscriptID.String())
 	app := middlewares.ApplicationFromRequest(r)
-	_, err := app.SendManuscriptCommand(r.Context(), manuscriptID, commands.CancelManuscriptSubmission{})
+	_, err := app.SendCommand(r.Context(), commands.CancelManuscriptSubmission{})
 	if err != nil {
 		slog.Error("manuscript submission cancelling request error", err, "manuscript_id", manuscriptID.String())
 		helpers.ManageError(w, err)
@@ -109,7 +108,7 @@ func handleCancelManuscriptSubmission(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleManuscriptState(w http.ResponseWriter, r *http.Request) {
-	manuscriptID := getManuscriptID(r)
+	manuscriptID := middlewares.GetManuscriptID(r)
 	slog.Info("manuscript status request", "manuscript_id", manuscriptID.String())
 	app := middlewares.ApplicationFromRequest(r)
 	queryResult, err := app.ManuscriptQuery(manuscriptID, queries.ManuscriptStatus{})
@@ -156,6 +155,7 @@ func handleManuscriptsFuncs(app application.Application) {
 			Middlewares: []middlewares.Middleware{
 				middlewares.UserShouldHaveAccessToManuscript,
 				middlewares.ExtractUserID,
+				middlewares.ExtractManuscriptID,
 				middlewares.InjectApplication(app),
 			},
 			Handler: handleManuscriptState,
@@ -166,6 +166,7 @@ func handleManuscriptsFuncs(app application.Application) {
 			Middlewares: []middlewares.Middleware{
 				middlewares.UserShouldHaveAccessToManuscript,
 				middlewares.ExtractUserID,
+				middlewares.ExtractManuscriptID,
 				middlewares.InjectApplication(app),
 			},
 			Handler: handleCancelManuscriptSubmission,
@@ -176,6 +177,7 @@ func handleManuscriptsFuncs(app application.Application) {
 			Middlewares: []middlewares.Middleware{
 				middlewares.OnlyAvailableForEditor,
 				middlewares.ExtractUserID,
+				middlewares.ExtractManuscriptID,
 				middlewares.InjectApplication(app),
 			},
 			Handler: handleManuscriptReviewSubmission,
@@ -184,6 +186,7 @@ func handleManuscriptsFuncs(app application.Application) {
 			Path:   "/api/manuscripts/to-review",
 			Method: "GET",
 			Middlewares: []middlewares.Middleware{
+				middlewares.OnlyAvailableForEditor,
 				middlewares.ExtractUserID,
 				middlewares.InjectApplication(app),
 			},

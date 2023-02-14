@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/ThomasFerro/l-edition-libre/events"
@@ -8,7 +9,7 @@ import (
 
 type PromoteUserToEditor struct{}
 
-func HandlePromoteUserToEditor(command PromoteUserToEditor) ([]events.Event, CommandError) {
+func HandlePromoteUserToEditor(ctx context.Context, command Command) ([]events.Event, CommandError) {
 	return []events.Event{
 		events.UserPromotedToEditor{},
 	}, nil

@@ -9,14 +9,10 @@ import (
 	"github.com/ThomasFerro/l-edition-libre/contexts"
 )
 
-func getManuscriptID(r *http.Request) application.ManuscriptID {
-	return application.MustParseManuscriptID(helpers.FromUrlParams(r.Context(), ":manuscriptID"))
-}
-
 func UserShouldHaveAccessToManuscript(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID := r.Context().Value(contexts.UserIDContextKey).(application.UserID)
-		manuscriptID := getManuscriptID(r)
+		manuscriptID := GetManuscriptID(r)
 		app := r.Context().Value(contexts.ApplicationContextKey).(application.Application)
 		haveAccess, err := app.UserHaveAccessToManuscript(userID, manuscriptID)
 		if err != nil {

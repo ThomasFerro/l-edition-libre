@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/ThomasFerro/l-edition-libre/domain"
@@ -10,7 +11,8 @@ import (
 type ReviewManuscript struct {
 }
 
-func HandleReviewManuscript(history []events.Event, command ReviewManuscript) ([]events.Event, CommandError) {
+func HandleReviewManuscript(ctx context.Context, command Command) ([]events.Event, CommandError) {
+	history := historyFromContext(ctx)
 	manuscript := domain.Rehydrate(history)
 	if manuscript.Status != domain.PendingReview {
 		return nil, AManuscriptShouldBePendingReviewToBeReviewed{

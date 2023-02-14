@@ -14,6 +14,10 @@ func UserIdFromRequest(r *http.Request) application.UserID {
 	return r.Context().Value(contexts.UserIDContextKey).(application.UserID)
 }
 
+func SetUserId(ctx context.Context, userID application.UserID) context.Context {
+	return context.WithValue(ctx, contexts.UserIDContextKey, userID)
+}
+
 func ExtractUserID(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userId := r.Header.Get(UserIDHeader)

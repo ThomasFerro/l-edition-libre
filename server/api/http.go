@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/ThomasFerro/l-edition-libre/application"
+	"github.com/ThomasFerro/l-edition-libre/commands"
 	"github.com/ThomasFerro/l-edition-libre/configuration"
 	"github.com/ThomasFerro/l-edition-libre/persistency"
 	"golang.org/x/exp/slog"
@@ -12,7 +13,15 @@ import (
 
 func Start() {
 	slog.Info("start new application")
-	app := application.NewApplication(persistency.NewManuscriptsHistory(), persistency.NewUsersHistory())
+	managedCommands := application.ManagedCommands{
+		"commands.CreateAccount":              commands.HandleCreateAccount,
+		"commands.PromoteUserToEditor":        commands.HandlePromoteUserToEditor,
+		"commands.SubmitManuscript":           commands.HandleSubmitManuscript,
+		"commands.ReviewManuscript":           commands.HandleReviewManuscript,
+		"commands.CancelManuscriptSubmission": commands.HandleCancelManuscriptSubmission,
+	}
+	managedQueries := application.ManagedQueries{}
+	app := application.NewApplication(persistency.NewManuscriptsHistory(), persistency.NewUsersHistory(), managedCommands, managedQueries)
 	slog.Info("setup HTTP API")
 
 	handleManuscriptsFuncs(app)

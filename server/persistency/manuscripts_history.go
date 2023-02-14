@@ -1,7 +1,10 @@
 package persistency
 
 import (
+	"context"
+
 	"github.com/ThomasFerro/l-edition-libre/application"
+	"github.com/ThomasFerro/l-edition-libre/contexts"
 )
 
 type ManuscriptsHistory struct {
@@ -32,7 +35,8 @@ func (manuscripts ManuscriptsHistory) ForAllOfUser(userID application.UserID) (m
 	return userHistory, nil
 }
 
-func (manuscripts ManuscriptsHistory) Append(manuscriptID application.ManuscriptID, newEvents []application.ContextualizedEvent) error {
+func (manuscripts ManuscriptsHistory) Append(ctx context.Context, newEvents []application.ContextualizedEvent) error {
+	manuscriptID := ctx.Value(contexts.ManuscriptIDContextKey).(application.ManuscriptID)
 	persistedEvents, exists := manuscripts.history[manuscriptID]
 	if !exists {
 		persistedEvents = make([]application.ContextualizedEvent, 0)

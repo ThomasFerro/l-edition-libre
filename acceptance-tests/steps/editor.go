@@ -35,12 +35,12 @@ func tableToManuscriptsToReview(table *godog.Table) []api.ManuscriptToReviewDto 
 
 func manuscriptsToReviewAreExpected(actual, expected []api.ManuscriptToReviewDto) error {
 	if len(actual) != len(expected) {
-		return fmt.Errorf("manuscripts to review mismatch\nexpected:\t%v\nactual:\t%v", expected, actual)
+		return fmt.Errorf("manuscripts to review mismatch\nexpected:\t%v\nactual:\t\t%v", expected, actual)
 	}
 	for index, nextExpected := range expected {
 		nextActual := actual[index]
 		if nextActual.Author != nextExpected.Author || nextActual.Title != nextExpected.Title {
-			return fmt.Errorf("manuscripts to review mismatch\nexpected:\t%v\nactual:\t%v", expected, actual)
+			return fmt.Errorf("manuscripts to review mismatch\nexpected:\t%v\nactual:\t\t%v", expected, actual)
 		}
 	}
 	return nil

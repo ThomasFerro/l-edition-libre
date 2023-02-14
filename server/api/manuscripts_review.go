@@ -11,27 +11,15 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// type ReviewManuscriptRequestDto struct{}
-
 func handleManuscriptReviewSubmission(w http.ResponseWriter, r *http.Request) {
-	// decoder := json.NewDecoder(r.Body)
-	// var dto ReviewManuscriptRequestDto
-	// err := decoder.Decode(&dto)
-	// slog.Info("manuscript submission review request", "user_id", userID.String(), "manuscript_id", manuscriptID.String(), "body", dto)
-	// if err != nil {
-	// 	slog.Error("manuscript creation request dto decoding error", err)
-	// 	helpers.ManageError(w, err)
-	// 	return
-	// }
-	manuscriptID := getManuscriptID(r)
 	app := middlewares.ApplicationFromRequest(r)
-	_, err := app.SendManuscriptCommand(r.Context(), manuscriptID, commands.ReviewManuscript{})
+	_, err := app.SendCommand(r.Context(), commands.ReviewManuscript{})
 	if err != nil {
-		slog.Error("manuscript submission review request error", err, "manuscript_id", manuscriptID.String())
+		slog.Error("manuscript submission review request error", err)
 		helpers.ManageError(w, err)
 		return
 	}
-	slog.Info("manuscript submission reviewed", "manuscript_id", manuscriptID)
+	slog.Info("manuscript submission reviewed")
 	helpers.WriteJson(w, "")
 }
 
