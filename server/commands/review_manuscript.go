@@ -12,7 +12,7 @@ type ReviewManuscript struct {
 }
 
 func HandleReviewManuscript(ctx context.Context, command Command) ([]events.Event, CommandError) {
-	history := historyFromContext(ctx)
+	history := manuscriptHistoryFromContext(ctx)
 	manuscript := domain.Rehydrate(history)
 	if manuscript.Status != domain.PendingReview {
 		return nil, AManuscriptShouldBePendingReviewToBeReviewed{

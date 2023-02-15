@@ -77,6 +77,7 @@ func handleUsersFuncs(app application.Application) {
 			Method: "POST",
 			Middlewares: []middlewares.Middleware{
 				middlewares.RequiresAdminApiKey,
+				middlewares.InjectHistory(),
 				middlewares.ExtractUserID,
 				middlewares.InjectApplication(app),
 			},

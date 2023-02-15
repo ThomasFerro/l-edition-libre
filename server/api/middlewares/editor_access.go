@@ -9,6 +9,7 @@ import (
 	"github.com/ThomasFerro/l-edition-libre/contexts"
 )
 
+// TODO: On devrait pouvoir s'en passer grâce au scope de l'history
 func OnlyAvailableForEditor(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID := r.Context().Value(contexts.UserIDContextKey).(application.UserID)

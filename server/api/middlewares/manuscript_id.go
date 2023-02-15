@@ -9,6 +9,14 @@ import (
 	"github.com/ThomasFerro/l-edition-libre/contexts"
 )
 
+func TryGetManuscriptID(r *http.Request) (application.ManuscriptID, bool) {
+	value := r.Context().Value(contexts.ManuscriptIDContextKey)
+	if value == nil {
+		return application.ManuscriptID{}, false
+	}
+	return value.(application.ManuscriptID), true
+}
+
 func GetManuscriptID(r *http.Request) application.ManuscriptID {
 	return r.Context().Value(contexts.ManuscriptIDContextKey).(application.ManuscriptID)
 }

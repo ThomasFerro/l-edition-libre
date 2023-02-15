@@ -30,7 +30,7 @@ type ContextualizedEvent struct {
 	ManuscriptID ManuscriptID
 }
 
-func toEvents(toMap []ContextualizedEvent) []events.Event {
+func ToEvents(toMap []ContextualizedEvent) []events.Event {
 	returned := make([]events.Event, 0)
 	for _, nextEvent := range toMap {
 		returned = append(returned, nextEvent.Event)
@@ -45,33 +45,55 @@ type queryType string
 type queryHandler func() interface{}
 type ManagedQueries = map[queryType]queryHandler
 
+// TODO: A terme, il faudrait que l'app ne s'occupe que de faire du dispatch de commandes / queries et laisse
+// les history à la couche au-dessus
 type Application struct {
-	manuscriptsHistory ManuscriptsHistory
-	usersHistory       UsersHistory
+	ManuscriptsHistory ManuscriptsHistory
+	UsersHistory       UsersHistory
 	managedCommands    ManagedCommands
 	managedQueries     ManagedQueries
 }
 
+// TODO: Déplacer dans un middleware post traitement
 func (app Application) manageCommandReturn(ctx context.Context, newEvents []events.Event, err error) ([]events.Event, error) {
 	if err != nil {
 		return nil, err
 	}
 	userID := ctx.Value(contexts.UserIDContextKey).(UserID)
-	contextualizedEvents := make([]ContextualizedEvent, len(newEvents))
-	for index, nextEvent := range newEvents {
-		contextualizedEvents[index] = ContextualizedEvent{
-			Event: nextEvent,
-			Context: EventContext{
-				UserID: userID,
-			},
+	contextualizedUserEvents := []ContextualizedEvent{}
+	contextualizedManuscriptEvents := []ContextualizedEvent{}
+	for _, nextEvent := range newEvents {
+		if _, isUserEvent := nextEvent.(events.UserEvent); isUserEvent {
+			contextualizedUserEvents = append(contextualizedUserEvents, ContextualizedEvent{
+				Event: nextEvent,
+				Context: EventContext{
+					UserID: userID,
+				},
+			})
+			continue
+		}
+		if _, isManuscriptEvent := nextEvent.(events.ManuscriptEvent); isManuscriptEvent {
+			contextualizedManuscriptEvents = append(contextualizedManuscriptEvents, ContextualizedEvent{
+				Event: nextEvent,
+				Context: EventContext{
+					UserID: userID,
+				},
+			})
 		}
 	}
-	// TODO: Comment gérer où on envoie les events ?
-	err = app.usersHistory.Append(ctx, contextualizedEvents)
-	if err != nil {
-		return nil, err
+	if len(contextualizedUserEvents) != 0 {
+		err = app.UsersHistory.Append(ctx, contextualizedUserEvents)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return newEvents, app.manuscriptsHistory.Append(ctx, contextualizedEvents)
+	if len(contextualizedManuscriptEvents) != 0 {
+		err = app.ManuscriptsHistory.Append(ctx, contextualizedManuscriptEvents)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return newEvents, nil
 }
 
 func (app Application) SendCommand(ctx context.Context, command commands.Command) ([]events.Event, error) {
@@ -88,13 +110,13 @@ func (app Application) SendCommand(ctx context.Context, command commands.Command
 // TODO: mieux typer le retour (générique?)
 func (app Application) ManuscriptQuery(manuscriptID ManuscriptID, query queries.Query) (interface{}, error) {
 	slog.Info("receiving query", "type", fmt.Sprintf("%T", query), "manuscript_id", manuscriptID, "query", query)
-	history, err := app.manuscriptsHistory.For(manuscriptID)
+	history, err := app.ManuscriptsHistory.For(manuscriptID)
 	if err != nil {
 		return nil, err
 	}
 	switch typedQuery := query.(type) {
 	case queries.ManuscriptStatus:
-		return queries.GetManuscriptStatus(toEvents(history), typedQuery)
+		return queries.GetManuscriptStatus(ToEvents(history), typedQuery)
 	default:
 		return nil, fmt.Errorf("unmanaged query type %T", query)
 	}
@@ -104,13 +126,13 @@ func (app Application) ManuscriptsQuery(userID UserID, query queries.Query) (int
 	slog.Info("receiving query", "type", fmt.Sprintf("%T", query), "query", query)
 	switch typedQuery := query.(type) {
 	case queries.ManuscriptsToReview:
-		history, err := app.manuscriptsHistory.ForAll()
+		history, err := app.ManuscriptsHistory.ForAll()
 		if err != nil {
 			return nil, err
 		}
 		return queries.GetManuscriptsToReview(toEventsByManuscript(history), typedQuery)
 	case queries.WriterManuscripts:
-		history, err := app.manuscriptsHistory.ForAllOfUser(userID)
+		history, err := app.ManuscriptsHistory.ForAllOfUser(userID)
 		if err != nil {
 			return nil, err
 		}

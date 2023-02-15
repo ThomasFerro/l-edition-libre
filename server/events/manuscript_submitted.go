@@ -10,3 +10,7 @@ type ManuscriptSubmitted struct {
 func (event ManuscriptSubmitted) String() string {
 	return fmt.Sprintf("ManuscriptSubmitted{Title %v, Author %v}", event.Title, event.Author)
 }
+
+func (event ManuscriptSubmitted) ManuscriptEventName() string {
+	return "ManuscriptSubmitted"
+}

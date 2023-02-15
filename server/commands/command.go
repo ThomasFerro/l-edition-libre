@@ -9,6 +9,10 @@ import (
 
 type Command interface{}
 
-func historyFromContext(ctx context.Context) []events.Event {
-	return ctx.Value(contexts.HistoryContextKey).([]events.Event)
+func userHistoryFromContext(ctx context.Context) []events.Event {
+	return ctx.Value(contexts.UserHistoryContextKey).([]events.Event)
+}
+
+func manuscriptHistoryFromContext(ctx context.Context) []events.Event {
+	return ctx.Value(contexts.ManuscriptHistoryContextKey).([]events.Event)
 }

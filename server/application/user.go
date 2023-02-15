@@ -35,7 +35,7 @@ func isAnEditor(history UsersHistory, userID UserID) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	for _, nextEvent := range toEvents(forUser) {
+	for _, nextEvent := range ToEvents(forUser) {
 		_, isAUserEditorEvent := nextEvent.(events.UserPromotedToEditor)
 		if isAUserEditorEvent {
 			return true, nil
@@ -46,7 +46,7 @@ func isAnEditor(history UsersHistory, userID UserID) (bool, error) {
 }
 
 func (app Application) UserHaveAccessToManuscript(userID UserID, manuscriptID ManuscriptID) (bool, error) {
-	isAnEditor, err := isAnEditor(app.usersHistory, userID)
+	isAnEditor, err := isAnEditor(app.UsersHistory, userID)
 	if err != nil {
 		slog.Warn("user role check error", "user_id", userID, "manuscript_id", manuscriptID, "error", err)
 		return false, err
@@ -54,7 +54,7 @@ func (app Application) UserHaveAccessToManuscript(userID UserID, manuscriptID Ma
 	if isAnEditor {
 		return true, nil
 	}
-	isManuscriptWriter, err := isTheManuscriptWriter(app.manuscriptsHistory, userID, manuscriptID)
+	isManuscriptWriter, err := isTheManuscriptWriter(app.ManuscriptsHistory, userID, manuscriptID)
 	if err != nil {
 		slog.Warn("user's link to manuscript check error", "user_id", userID, "manuscript_id", manuscriptID, "error", err)
 		return false, err
@@ -67,7 +67,7 @@ func (app Application) UserHaveAccessToManuscript(userID UserID, manuscriptID Ma
 }
 
 func (app Application) UserIsAnEditor(userID UserID) (bool, error) {
-	return isAnEditor(app.usersHistory, userID)
+	return isAnEditor(app.UsersHistory, userID)
 }
 
 type UsersHistory interface {

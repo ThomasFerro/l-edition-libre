@@ -144,6 +144,7 @@ func handleManuscriptsFuncs(app application.Application) {
 			Path:   "/api/manuscripts",
 			Method: "GET",
 			Middlewares: []middlewares.Middleware{
+				middlewares.InjectHistory(),
 				middlewares.ExtractUserID,
 				middlewares.InjectApplication(app),
 			},
@@ -154,6 +155,7 @@ func handleManuscriptsFuncs(app application.Application) {
 			Method: "GET",
 			Middlewares: []middlewares.Middleware{
 				middlewares.UserShouldHaveAccessToManuscript,
+				middlewares.InjectHistory(),
 				middlewares.ExtractUserID,
 				middlewares.ExtractManuscriptID,
 				middlewares.InjectApplication(app),
@@ -165,6 +167,7 @@ func handleManuscriptsFuncs(app application.Application) {
 			Method: "POST",
 			Middlewares: []middlewares.Middleware{
 				middlewares.UserShouldHaveAccessToManuscript,
+				middlewares.InjectHistory(),
 				middlewares.ExtractUserID,
 				middlewares.ExtractManuscriptID,
 				middlewares.InjectApplication(app),
@@ -176,6 +179,7 @@ func handleManuscriptsFuncs(app application.Application) {
 			Method: "POST",
 			Middlewares: []middlewares.Middleware{
 				middlewares.OnlyAvailableForEditor,
+				middlewares.InjectHistory(),
 				middlewares.ExtractUserID,
 				middlewares.ExtractManuscriptID,
 				middlewares.InjectApplication(app),
@@ -187,6 +191,7 @@ func handleManuscriptsFuncs(app application.Application) {
 			Method: "GET",
 			Middlewares: []middlewares.Middleware{
 				middlewares.OnlyAvailableForEditor,
+				middlewares.InjectHistory(),
 				middlewares.ExtractUserID,
 				middlewares.InjectApplication(app),
 			},
