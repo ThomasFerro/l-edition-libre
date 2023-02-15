@@ -1,12 +1,15 @@
 package queries
 
 import (
+	"context"
+
+	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"github.com/ThomasFerro/l-edition-libre/domain"
-	"github.com/ThomasFerro/l-edition-libre/events"
 )
 
 type ManuscriptStatus struct{}
 
-func GetManuscriptStatus(history []events.Event, query ManuscriptStatus) (domain.Status, error) {
+func HandleManuscriptStatus(ctx context.Context, query Query) (interface{}, error) {
+	history := contexts.ManuscriptHistoryFromContext(ctx)
 	return domain.Rehydrate(history).Status, nil
 }

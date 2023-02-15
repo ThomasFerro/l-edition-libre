@@ -51,9 +51,7 @@ func fromDomain(manuscripts []domain.Manuscript) ManuscriptsToReviewDto {
 
 func handleGetManuscriptsToReview(w http.ResponseWriter, r *http.Request) *http.Request {
 	app := middlewares.ApplicationFromRequest(r)
-	// TODO: Autre solution à tester où on contextualise l'application
-	userID := middlewares.UserIdFromRequest(r)
-	queryResult, err := app.ManuscriptsQuery(userID, queries.ManuscriptsToReview{})
+	queryResult, err := app.Query(r.Context(), queries.ManuscriptsToReview{})
 	if err != nil {
 		slog.Error("manuscripts to review request error", err)
 		helpers.ManageError(w, err)

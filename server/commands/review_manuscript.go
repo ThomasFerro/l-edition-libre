@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"github.com/ThomasFerro/l-edition-libre/domain"
 	"github.com/ThomasFerro/l-edition-libre/events"
 )
@@ -12,7 +13,7 @@ type ReviewManuscript struct {
 }
 
 func HandleReviewManuscript(ctx context.Context, command Command) ([]events.Event, CommandError) {
-	history := manuscriptHistoryFromContext(ctx)
+	history := contexts.ManuscriptHistoryFromContext(ctx)
 	manuscript := domain.Rehydrate(history)
 	if manuscript.Status != domain.PendingReview {
 		return nil, AManuscriptShouldBePendingReviewToBeReviewed{

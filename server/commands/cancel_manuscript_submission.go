@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"github.com/ThomasFerro/l-edition-libre/domain"
 	"github.com/ThomasFerro/l-edition-libre/events"
 )
@@ -11,7 +12,7 @@ import (
 type CancelManuscriptSubmission struct{}
 
 func HandleCancelManuscriptSubmission(ctx context.Context, command Command) ([]events.Event, CommandError) {
-	history := manuscriptHistoryFromContext(ctx)
+	history := contexts.ManuscriptHistoryFromContext(ctx)
 	manuscript := domain.Rehydrate(history)
 	if manuscript.Status != domain.PendingReview {
 		return nil, AManuscriptShouldBePendingReviewForItsSubmissionToBeCanceled{

@@ -1,13 +1,16 @@
 package queries
 
 import (
+	"context"
+
+	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"github.com/ThomasFerro/l-edition-libre/domain"
-	"github.com/ThomasFerro/l-edition-libre/events"
 )
 
 type WriterManuscripts struct{}
 
-func GetWriterManuscripts(historyForManuscripts [][]events.Event, query WriterManuscripts) ([]domain.Manuscript, error) {
+func HandleWriterManuscripts(ctx context.Context, query Query) (interface{}, error) {
+	historyForManuscripts := contexts.ManuscriptsHistoryFromContext(ctx)
 	manuscripts := make([]domain.Manuscript, 0)
 	for _, historyForManuscript := range historyForManuscripts {
 		manuscripts = append(manuscripts, domain.Rehydrate(historyForManuscript))

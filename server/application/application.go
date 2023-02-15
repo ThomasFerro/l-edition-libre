@@ -11,15 +11,6 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-/* TODO: Chantier de simplification de la partie application
-- Lancer l'application avec une map[commandType]commandHandler / map[queryType]queryHandler
-- Une seule méthode Command et une seule Query
-- Les commandes et queries ont toutes la même API
-- Les données supplémentaires sont à chercher dans le context, qui pourra potentiellement être raffiné en fonction de la commande / query (limiter l'accès en fonction de l'utilisateur)
-- Helpers aussi disponibles dans le context (ApplicationContext ?)
-- Queries = consommation de projections
-*/
-
 // TODO: un history générique ?
 type EventContext struct {
 	UserID
@@ -42,7 +33,7 @@ type CommandType string
 type CommandHandler func(context.Context, commands.Command) ([]events.Event, commands.CommandError)
 type ManagedCommands = map[CommandType]CommandHandler
 type queryType string
-type queryHandler func() interface{}
+type queryHandler func(context.Context, queries.Query) (interface{}, error)
 type ManagedQueries = map[queryType]queryHandler
 
 // TODO: A terme, il faudrait que l'app ne s'occupe que de faire du dispatch de commandes / queries et laisse
@@ -69,39 +60,15 @@ func (app Application) SendCommand(ctx context.Context, command commands.Command
 	return nil, fmt.Errorf("unhandled command %v", sentCommandType)
 }
 
-// TODO: mieux typer le retour (générique?)
-func (app Application) ManuscriptQuery(manuscriptID ManuscriptID, query queries.Query) (interface{}, error) {
-	slog.Info("receiving query", "type", fmt.Sprintf("%T", query), "manuscript_id", manuscriptID, "query", query)
-	history, err := app.ManuscriptsHistory.For(manuscriptID)
-	if err != nil {
-		return nil, err
-	}
-	switch typedQuery := query.(type) {
-	case queries.ManuscriptStatus:
-		return queries.GetManuscriptStatus(ToEvents(history), typedQuery)
-	default:
-		return nil, fmt.Errorf("unmanaged query type %T", query)
-	}
-}
+// TODO: Queries = consommation de projections
+func (app Application) Query(ctx context.Context, query queries.Query) (interface{}, error) {
+	sentQueryType := queryType(fmt.Sprintf("%T", query))
+	slog.Info("receiving query", "type", string(sentQueryType))
 
-func (app Application) ManuscriptsQuery(userID UserID, query queries.Query) (interface{}, error) {
-	slog.Info("receiving query", "type", fmt.Sprintf("%T", query), "query", query)
-	switch typedQuery := query.(type) {
-	case queries.ManuscriptsToReview:
-		history, err := app.ManuscriptsHistory.ForAll()
-		if err != nil {
-			return nil, err
-		}
-		return queries.GetManuscriptsToReview(toEventsByManuscript(history), typedQuery)
-	case queries.WriterManuscripts:
-		history, err := app.ManuscriptsHistory.ForAllOfUser(userID)
-		if err != nil {
-			return nil, err
-		}
-		return queries.GetWriterManuscripts(toEventsByManuscript(history), typedQuery)
-	default:
-		return nil, fmt.Errorf("unmanaged query type %T", query)
+	if queryHandler, exists := app.managedQueries[sentQueryType]; exists {
+		return queryHandler(ctx, query)
 	}
+	return nil, fmt.Errorf("unhandled query %v", sentQueryType)
 }
 
 func NewApplication(manuscriptsHistory ManuscriptsHistory, usersHistory UsersHistory, managedCommands ManagedCommands, managedQueries ManagedQueries) Application {

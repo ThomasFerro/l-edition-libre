@@ -51,7 +51,7 @@ func isTheManuscriptWriter(history ManuscriptsHistory, userID UserID, manuscript
 	return false, nil
 }
 
-func toEventsByManuscript(toMap map[ManuscriptID][]ContextualizedEvent) [][]events.Event {
+func ToEventsByManuscript(toMap map[ManuscriptID][]ContextualizedEvent) [][]events.Event {
 	returned := make([][]events.Event, 0)
 	for _, nextManuscript := range toMap {
 		mappedEvents := make([]events.Event, 0)

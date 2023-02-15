@@ -25,8 +25,7 @@ type WriterManuscriptsDto struct {
 func handleGetManuscripts(w http.ResponseWriter, r *http.Request) *http.Request {
 	slog.Info("writer manuscripts request")
 	app := middlewares.ApplicationFromRequest(r)
-	userID := middlewares.UserIdFromRequest(r)
-	queryResult, err := app.ManuscriptsQuery(userID, queries.WriterManuscripts{})
+	queryResult, err := app.Query(r.Context(), queries.WriterManuscripts{})
 	if err != nil {
 		slog.Error("writer manuscripts query error", err)
 		helpers.ManageError(w, err)
@@ -116,7 +115,7 @@ func handleManuscriptState(w http.ResponseWriter, r *http.Request) *http.Request
 	manuscriptID := middlewares.GetManuscriptID(r)
 	slog.Info("manuscript status request", "manuscript_id", manuscriptID.String())
 	app := middlewares.ApplicationFromRequest(r)
-	queryResult, err := app.ManuscriptQuery(manuscriptID, queries.ManuscriptStatus{})
+	queryResult, err := app.Query(r.Context(), queries.ManuscriptStatus{})
 	if err != nil {
 		slog.Error("manuscript status query error", err, "manuscript_id", manuscriptID.String())
 		helpers.ManageError(w, err)

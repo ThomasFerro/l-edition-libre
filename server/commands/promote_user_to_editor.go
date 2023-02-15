@@ -10,6 +10,7 @@ import (
 type PromoteUserToEditor struct{}
 
 func HandlePromoteUserToEditor(ctx context.Context, command Command) ([]events.Event, CommandError) {
+	// TODO: User exists
 	return []events.Event{
 		events.UserPromotedToEditor{},
 	}, nil

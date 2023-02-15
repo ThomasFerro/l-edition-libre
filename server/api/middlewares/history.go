@@ -21,7 +21,7 @@ func InjectHistory() Middleware {
 				helpers.ManageError(w, err)
 				return r
 			}
-			r = r.WithContext(context.WithValue(r.Context(), contexts.ManuscriptsHistoryContextKey, manuscriptsHistory))
+			r = r.WithContext(context.WithValue(r.Context(), contexts.ManuscriptsHistoryContextKey, application.ToEventsByManuscript(manuscriptsHistory)))
 			if manuscriptID, found := TryGetManuscriptID(r); found {
 				r = r.WithContext(context.WithValue(r.Context(), contexts.ManuscriptHistoryContextKey, application.ToEvents(manuscriptsHistory[manuscriptID])))
 			}

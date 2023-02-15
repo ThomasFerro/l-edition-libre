@@ -8,6 +8,7 @@ import (
 	"github.com/ThomasFerro/l-edition-libre/commands"
 	"github.com/ThomasFerro/l-edition-libre/configuration"
 	"github.com/ThomasFerro/l-edition-libre/persistency"
+	"github.com/ThomasFerro/l-edition-libre/queries"
 	"golang.org/x/exp/slog"
 )
 
@@ -20,7 +21,11 @@ func Start() {
 		"commands.ReviewManuscript":           commands.HandleReviewManuscript,
 		"commands.CancelManuscriptSubmission": commands.HandleCancelManuscriptSubmission,
 	}
-	managedQueries := application.ManagedQueries{}
+	managedQueries := application.ManagedQueries{
+		"queries.ManuscriptStatus":    queries.HandleManuscriptStatus,
+		"queries.WriterManuscripts":   queries.HandleWriterManuscripts,
+		"queries.ManuscriptsToReview": queries.HandleManuscriptsToReview,
+	}
 	app := application.NewApplication(persistency.NewManuscriptsHistory(), persistency.NewUsersHistory(), managedCommands, managedQueries)
 	slog.Info("setup HTTP API")
 
