@@ -2,4 +2,5 @@ package middlewares
 
 import "net/http"
 
-type Middleware func(next http.HandlerFunc) http.HandlerFunc
+type HandlerFuncReturningRequest func(http.ResponseWriter, *http.Request) *http.Request
+type Middleware func(next HandlerFuncReturningRequest) HandlerFuncReturningRequest

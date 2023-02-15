@@ -20,7 +20,7 @@ type CreateAccountResponseDto struct {
 	Id string `json:"id"`
 }
 
-func handleAccountCreation(w http.ResponseWriter, r *http.Request) {
+func handleAccountCreation(w http.ResponseWriter, r *http.Request) *http.Request {
 	decoder := json.NewDecoder(r.Body)
 	var dto CreateAccountRequestDto
 	err := decoder.Decode(&dto)
@@ -28,38 +28,42 @@ func handleAccountCreation(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Error("account creation request dto decoding error", err)
 		helpers.ManageError(w, err)
-		return
+		return r
 	}
 
 	newUserID := application.NewUserID()
-	ctx := middlewares.SetUserId(r.Context(), newUserID)
+	r = middlewares.SetUserId(r, newUserID)
 	app := middlewares.ApplicationFromRequest(r)
-	_, err = app.SendCommand(ctx, commands.CreateAccount{
+	ctx, err := app.SendCommand(r.Context(), commands.CreateAccount{
 		DisplayedName: dto.DisplayedName,
 	})
 	if err != nil {
 		slog.Error("account creation request error", err)
 		helpers.ManageError(w, err)
-		return
+		return r
 	}
+	r = r.WithContext(ctx)
 	slog.Info("acount created", "user_id", newUserID.String())
 	helpers.WriteJson(w, CreateAccountResponseDto{
 		Id: newUserID.String(),
 	})
+	return r
 }
 
-func handlePromoteToEditor(w http.ResponseWriter, r *http.Request) {
+func handlePromoteToEditor(w http.ResponseWriter, r *http.Request) *http.Request {
 	slog.Info("receiving promotion to editor request")
 
 	app := middlewares.ApplicationFromRequest(r)
-	_, err := app.SendCommand(r.Context(), commands.PromoteUserToEditor{})
+	ctx, err := app.SendCommand(r.Context(), commands.PromoteUserToEditor{})
 	if err != nil {
 		slog.Error("promotion to editor request error", err)
 		helpers.ManageError(w, err)
-		return
+		return r
 	}
+	r = r.WithContext(ctx)
 	slog.Info("user promoted to editor")
 	helpers.WriteJson(w, "")
+	return r
 }
 
 func handleUsersFuncs(app application.Application) {
@@ -68,6 +72,7 @@ func handleUsersFuncs(app application.Application) {
 			Path:   "/api/users",
 			Method: "POST",
 			Middlewares: []middlewares.Middleware{
+				middlewares.PersistNewEvents,
 				middlewares.InjectApplication(app),
 			},
 			Handler: handleAccountCreation,
@@ -76,6 +81,7 @@ func handleUsersFuncs(app application.Application) {
 			Path:   "/api/users/:userID",
 			Method: "POST",
 			Middlewares: []middlewares.Middleware{
+				middlewares.PersistNewEvents,
 				middlewares.RequiresAdminApiKey,
 				middlewares.InjectHistory(),
 				middlewares.ExtractUserID,

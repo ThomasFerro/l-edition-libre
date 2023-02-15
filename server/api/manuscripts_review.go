@@ -11,16 +11,18 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-func handleManuscriptReviewSubmission(w http.ResponseWriter, r *http.Request) {
+func handleManuscriptReviewSubmission(w http.ResponseWriter, r *http.Request) *http.Request {
 	app := middlewares.ApplicationFromRequest(r)
-	_, err := app.SendCommand(r.Context(), commands.ReviewManuscript{})
+	ctx, err := app.SendCommand(r.Context(), commands.ReviewManuscript{})
 	if err != nil {
 		slog.Error("manuscript submission review request error", err)
 		helpers.ManageError(w, err)
-		return
+		return r
 	}
+	r = r.WithContext(ctx)
 	slog.Info("manuscript submission reviewed")
 	helpers.WriteJson(w, "")
+	return r
 }
 
 type ManuscriptToReviewDto struct {
@@ -47,7 +49,7 @@ func fromDomain(manuscripts []domain.Manuscript) ManuscriptsToReviewDto {
 	return dto
 }
 
-func handleGetManuscriptsToReview(w http.ResponseWriter, r *http.Request) {
+func handleGetManuscriptsToReview(w http.ResponseWriter, r *http.Request) *http.Request {
 	app := middlewares.ApplicationFromRequest(r)
 	// TODO: Autre solution à tester où on contextualise l'application
 	userID := middlewares.UserIdFromRequest(r)
@@ -55,14 +57,15 @@ func handleGetManuscriptsToReview(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Error("manuscripts to review request error", err)
 		helpers.ManageError(w, err)
-		return
+		return r
 	}
 	manuscripts, castedSuccessfuly := queryResult.([]domain.Manuscript)
 	if !castedSuccessfuly {
 		slog.Error("manuscripts to review query result casting error", err)
 		helpers.ManageError(w, err)
-		return
+		return r
 	}
 
 	helpers.WriteJson(w, fromDomain(manuscripts))
+	return r
 }

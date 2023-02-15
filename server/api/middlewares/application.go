@@ -13,10 +13,10 @@ func ApplicationFromRequest(r *http.Request) application.Application {
 }
 
 func InjectApplication(app application.Application) Middleware {
-	return func(next http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
+	return func(next HandlerFuncReturningRequest) HandlerFuncReturningRequest {
+		return func(w http.ResponseWriter, r *http.Request) *http.Request {
 			r = r.WithContext(context.WithValue(r.Context(), contexts.ApplicationContextKey, app))
-			next(w, r)
+			return next(w, r)
 		}
 	}
 }

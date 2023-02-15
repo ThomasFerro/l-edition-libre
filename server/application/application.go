@@ -54,49 +54,11 @@ type Application struct {
 	managedQueries     ManagedQueries
 }
 
-// TODO: Déplacer dans un middleware post traitement
-func (app Application) manageCommandReturn(ctx context.Context, newEvents []events.Event, err error) ([]events.Event, error) {
-	if err != nil {
-		return nil, err
-	}
-	userID := ctx.Value(contexts.UserIDContextKey).(UserID)
-	contextualizedUserEvents := []ContextualizedEvent{}
-	contextualizedManuscriptEvents := []ContextualizedEvent{}
-	for _, nextEvent := range newEvents {
-		if _, isUserEvent := nextEvent.(events.UserEvent); isUserEvent {
-			contextualizedUserEvents = append(contextualizedUserEvents, ContextualizedEvent{
-				Event: nextEvent,
-				Context: EventContext{
-					UserID: userID,
-				},
-			})
-			continue
-		}
-		if _, isManuscriptEvent := nextEvent.(events.ManuscriptEvent); isManuscriptEvent {
-			contextualizedManuscriptEvents = append(contextualizedManuscriptEvents, ContextualizedEvent{
-				Event: nextEvent,
-				Context: EventContext{
-					UserID: userID,
-				},
-			})
-		}
-	}
-	if len(contextualizedUserEvents) != 0 {
-		err = app.UsersHistory.Append(ctx, contextualizedUserEvents)
-		if err != nil {
-			return nil, err
-		}
-	}
-	if len(contextualizedManuscriptEvents) != 0 {
-		err = app.ManuscriptsHistory.Append(ctx, contextualizedManuscriptEvents)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return newEvents, nil
+func (app Application) manageCommandReturn(ctx context.Context, newEvents []events.Event, err error) (context.Context, error) {
+	return context.WithValue(ctx, contexts.NewEventsContextKey, newEvents), err
 }
 
-func (app Application) SendCommand(ctx context.Context, command commands.Command) ([]events.Event, error) {
+func (app Application) SendCommand(ctx context.Context, command commands.Command) (context.Context, error) {
 	sentCommandType := CommandType(fmt.Sprintf("%T", command))
 	slog.Info("receiving command", "type", string(sentCommandType))
 

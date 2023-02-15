@@ -14,23 +14,24 @@ func UserIdFromRequest(r *http.Request) application.UserID {
 	return r.Context().Value(contexts.UserIDContextKey).(application.UserID)
 }
 
-func SetUserId(ctx context.Context, userID application.UserID) context.Context {
-	return context.WithValue(ctx, contexts.UserIDContextKey, userID)
+func SetUserId(r *http.Request, userID application.UserID) *http.Request {
+	return r.WithContext(context.WithValue(r.Context(), contexts.UserIDContextKey, userID))
 }
 
-func ExtractUserID(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func ExtractUserID(next HandlerFuncReturningRequest) HandlerFuncReturningRequest {
+	return func(w http.ResponseWriter, r *http.Request) *http.Request {
 		userId := r.Header.Get(UserIDHeader)
 		if userId == "" {
-			return
+			return r
 		}
 		parsed, err := application.ParseUserID(userId)
 		if err != nil {
 			http.Error(w, "Malformed user id", http.StatusBadRequest)
-			return
+			return r
 		}
 
 		r = r.WithContext(context.WithValue(r.Context(), contexts.UserIDContextKey, parsed))
-		next(w, r)
+
+		return next(w, r)
 	}
 }

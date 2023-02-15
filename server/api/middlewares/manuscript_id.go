@@ -25,15 +25,15 @@ func SetManuscriptID(r *http.Request, manuscriptID application.ManuscriptID) *ht
 	return r.WithContext(context.WithValue(r.Context(), contexts.ManuscriptIDContextKey, manuscriptID))
 }
 
-func ExtractManuscriptID(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func ExtractManuscriptID(next HandlerFuncReturningRequest) HandlerFuncReturningRequest {
+	return func(w http.ResponseWriter, r *http.Request) *http.Request {
 		manuscriptID, err := application.ParseManuscriptID(helpers.FromUrlParams(r.Context(), ":manuscriptID"))
 
 		if err != nil {
 			helpers.ManageError(w, err)
-			return
+			return r
 		}
 		r = SetManuscriptID(r, manuscriptID)
-		next(w, r)
+		return next(w, r)
 	}
 }

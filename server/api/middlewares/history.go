@@ -11,22 +11,22 @@ import (
 )
 
 func InjectHistory() Middleware {
-	return func(next http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
+	return func(next HandlerFuncReturningRequest) HandlerFuncReturningRequest {
+		return func(w http.ResponseWriter, r *http.Request) *http.Request {
 			app := ApplicationFromRequest(r)
 
 			userID := r.Context().Value(contexts.UserIDContextKey).(application.UserID)
 			manuscriptsHistory, err := manuscriptsHistory(app, userID)
 			if err != nil {
 				helpers.ManageError(w, err)
-				return
+				return r
 			}
 			r = r.WithContext(context.WithValue(r.Context(), contexts.ManuscriptsHistoryContextKey, manuscriptsHistory))
 			if manuscriptID, found := TryGetManuscriptID(r); found {
 				r = r.WithContext(context.WithValue(r.Context(), contexts.ManuscriptHistoryContextKey, application.ToEvents(manuscriptsHistory[manuscriptID])))
 			}
 			r = r.WithContext(context.WithValue(r.Context(), contexts.UserHistoryContextKey, []events.Event{}))
-			next(w, r)
+			return next(w, r)
 		}
 	}
 }

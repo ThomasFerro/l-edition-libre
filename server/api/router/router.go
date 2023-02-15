@@ -12,7 +12,7 @@ import (
 type Route struct {
 	Path        string
 	Method      string
-	Handler     http.HandlerFunc
+	Handler     middlewares.HandlerFuncReturningRequest
 	Middlewares []middlewares.Middleware
 }
 type pathSegment struct {
@@ -82,15 +82,24 @@ func (route Route) addAllRouteParameters(ctx context.Context, url string) contex
 	return ctx
 }
 
+func toHttpHandlerFunc(handler middlewares.HandlerFuncReturningRequest) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		handler(w, r)
+	}
+}
+
 func (route Route) handlerWithMiddlewaresApplied() http.HandlerFunc {
 	if len(route.Middlewares) == 0 {
-		return route.Handler
+		return toHttpHandlerFunc(route.Handler)
 	}
-	handler := route.Middlewares[0](route.Handler)
+	routeHandler := func(w http.ResponseWriter, r *http.Request) *http.Request {
+		return route.Handler(w, r)
+	}
+	handler := route.Middlewares[0](routeHandler)
 	for i := 1; i < len(route.Middlewares); i++ {
 		handler = route.Middlewares[i](handler)
 	}
-	return handler
+	return toHttpHandlerFunc(handler)
 }
 
 func customHandlerFunc(routes []Route) func(http.ResponseWriter, *http.Request) {
