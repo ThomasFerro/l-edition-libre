@@ -134,14 +134,17 @@ func handleManuscriptState(w http.ResponseWriter, r *http.Request) *http.Request
 	return r
 }
 
-func handleManuscriptsFuncs(app application.Application) {
+func handleManuscriptsFuncs(app application.Application, usersHistory application.UsersHistory, manuscriptsHistory application.ManuscriptsHistory) {
 	routes := []router.Route{
 		{
 			Path:   "/api/manuscripts",
 			Method: "POST",
 			Middlewares: []middlewares.Middleware{
 				middlewares.PersistNewEvents,
+				middlewares.InjectContextualizedManuscriptsHistory,
 				middlewares.ExtractUserID,
+				middlewares.InjectManuscriptsHistory(manuscriptsHistory),
+				middlewares.InjectUsersHistory(usersHistory),
 				middlewares.InjectApplication(app),
 			},
 			Handler: handleManuscriptCreation,
@@ -150,8 +153,10 @@ func handleManuscriptsFuncs(app application.Application) {
 			Path:   "/api/manuscripts",
 			Method: "GET",
 			Middlewares: []middlewares.Middleware{
-				middlewares.InjectHistory(),
+				middlewares.InjectContextualizedManuscriptsHistory,
 				middlewares.ExtractUserID,
+				middlewares.InjectManuscriptsHistory(manuscriptsHistory),
+				middlewares.InjectUsersHistory(usersHistory),
 				middlewares.InjectApplication(app),
 			},
 			Handler: handleGetManuscripts,
@@ -161,9 +166,12 @@ func handleManuscriptsFuncs(app application.Application) {
 			Method: "GET",
 			Middlewares: []middlewares.Middleware{
 				middlewares.UserShouldHaveAccessToManuscript,
-				middlewares.InjectHistory(),
+				middlewares.InjectContextualizedManuscriptsHistory,
+				middlewares.InjectContextualizedUserHistory,
 				middlewares.ExtractUserID,
 				middlewares.ExtractManuscriptID,
+				middlewares.InjectManuscriptsHistory(manuscriptsHistory),
+				middlewares.InjectUsersHistory(usersHistory),
 				middlewares.InjectApplication(app),
 			},
 			Handler: handleManuscriptState,
@@ -174,9 +182,12 @@ func handleManuscriptsFuncs(app application.Application) {
 			Middlewares: []middlewares.Middleware{
 				middlewares.PersistNewEvents,
 				middlewares.UserShouldHaveAccessToManuscript,
-				middlewares.InjectHistory(),
+				middlewares.InjectContextualizedManuscriptsHistory,
+				middlewares.InjectContextualizedUserHistory,
 				middlewares.ExtractUserID,
 				middlewares.ExtractManuscriptID,
+				middlewares.InjectManuscriptsHistory(manuscriptsHistory),
+				middlewares.InjectUsersHistory(usersHistory),
 				middlewares.InjectApplication(app),
 			},
 			Handler: handleCancelManuscriptSubmission,
@@ -187,9 +198,12 @@ func handleManuscriptsFuncs(app application.Application) {
 			Middlewares: []middlewares.Middleware{
 				middlewares.PersistNewEvents,
 				middlewares.OnlyAvailableForEditor,
-				middlewares.InjectHistory(),
+				middlewares.InjectContextualizedManuscriptsHistory,
+				middlewares.InjectContextualizedUserHistory,
 				middlewares.ExtractUserID,
 				middlewares.ExtractManuscriptID,
+				middlewares.InjectManuscriptsHistory(manuscriptsHistory),
+				middlewares.InjectUsersHistory(usersHistory),
 				middlewares.InjectApplication(app),
 			},
 			Handler: handleManuscriptReviewSubmission,
@@ -199,8 +213,11 @@ func handleManuscriptsFuncs(app application.Application) {
 			Method: "GET",
 			Middlewares: []middlewares.Middleware{
 				middlewares.OnlyAvailableForEditor,
-				middlewares.InjectHistory(),
+				middlewares.InjectContextualizedManuscriptsHistory,
+				middlewares.InjectContextualizedUserHistory,
 				middlewares.ExtractUserID,
+				middlewares.InjectManuscriptsHistory(manuscriptsHistory),
+				middlewares.InjectUsersHistory(usersHistory),
 				middlewares.InjectApplication(app),
 			},
 			Handler: handleGetManuscriptsToReview,

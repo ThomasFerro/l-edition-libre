@@ -26,11 +26,13 @@ func Start() {
 		"queries.WriterManuscripts":   queries.HandleWriterManuscripts,
 		"queries.ManuscriptsToReview": queries.HandleManuscriptsToReview,
 	}
-	app := application.NewApplication(persistency.NewManuscriptsHistory(), persistency.NewUsersHistory(), managedCommands, managedQueries)
+	manuscriptsHistory := persistency.NewManuscriptsHistory()
+	usersHistory := persistency.NewUsersHistory()
+	app := application.NewApplication(managedCommands, managedQueries)
 	slog.Info("setup HTTP API")
 
-	handleManuscriptsFuncs(app)
-	handleUsersFuncs(app)
+	handleManuscriptsFuncs(app, usersHistory, manuscriptsHistory)
+	handleUsersFuncs(app, usersHistory)
 
 	slog.Info("HTTP API start listening")
 	port := configuration.GetConfiguration(configuration.PORT)

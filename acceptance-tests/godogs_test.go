@@ -11,18 +11,6 @@ import (
 	"github.com/cucumber/godog"
 )
 
-func iEat(arg1 int) error {
-	return godog.ErrPending
-}
-
-func thereAreGodogs(arg1 int) error {
-	return godog.ErrPending
-}
-
-func thereShouldBeRemaining(arg1 int) error {
-	return godog.ErrPending
-}
-
 func InitializeTestSuite(*godog.TestSuiteContext) {
 	go api.Start()
 }
@@ -53,7 +41,7 @@ func TestFeatures(t *testing.T) {
 			Format:        "pretty",
 			Paths:         []string{"features"},
 			TestingT:      t,
-			StopOnFailure: true,
+			StopOnFailure: false,
 		},
 	}
 

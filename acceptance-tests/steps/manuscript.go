@@ -15,7 +15,7 @@ import (
 func aWriterSubmittedAManuscript(ctx context.Context, manuscriptName string) (context.Context, error) {
 	ctx, err := authentifyAsWriter(ctx)
 	if err != nil {
-		return nil, err
+		return ctx, err
 	}
 	return sumbitManuscript(ctx, manuscriptName)
 }
@@ -23,7 +23,7 @@ func aWriterSubmittedAManuscript(ctx context.Context, manuscriptName string) (co
 func theWriterSubmittedAManuscript(ctx context.Context, writerName string, manuscriptName string) (context.Context, error) {
 	ctx, err := authentifyAsWriterWithName(ctx, writerName)
 	if err != nil {
-		return nil, err
+		return ctx, err
 	}
 	return sumbitManuscript(ctx, manuscriptName)
 }

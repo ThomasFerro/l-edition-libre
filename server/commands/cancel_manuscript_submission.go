@@ -12,8 +12,8 @@ import (
 type CancelManuscriptSubmission struct{}
 
 func HandleCancelManuscriptSubmission(ctx context.Context, command Command) ([]events.Event, CommandError) {
-	history := contexts.ManuscriptHistoryFromContext(ctx)
-	manuscript := domain.Rehydrate(history)
+	history := contexts.FromContext[[]events.DecoratedEvent](ctx, contexts.ContextualizedManuscriptHistoryContextKey)
+	manuscript := domain.Rehydrate(events.ToEvents(history))
 	if manuscript.Status != domain.PendingReview {
 		return nil, AManuscriptShouldBePendingReviewForItsSubmissionToBeCanceled{
 			actualStatus: manuscript.Status,

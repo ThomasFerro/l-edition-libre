@@ -13,20 +13,18 @@ func PersistNewEvents(next HandlerFuncReturningRequest) HandlerFuncReturningRequ
 	return func(w http.ResponseWriter, r *http.Request) *http.Request {
 		r = next(w, r)
 
-		app := ApplicationFromRequest(r)
-
-		userID := UserIdFromRequest(r)
-		contextualizedUserEvents := []application.ContextualizedEvent{}
-		contextualizedManuscriptEvents := []application.ContextualizedEvent{}
 		newEvents := r.Context().Value(contexts.NewEventsContextKey)
 		if newEvents == nil {
 			return r
 		}
 
+		userID := UserIdFromRequest(r)
+		contextualizedUserEvents := []application.ContextualizedEvent{}
+		contextualizedManuscriptEvents := []application.ContextualizedEvent{}
 		for _, nextEvent := range newEvents.([]events.Event) {
 			if _, isUserEvent := nextEvent.(events.UserEvent); isUserEvent {
 				contextualizedUserEvents = append(contextualizedUserEvents, application.ContextualizedEvent{
-					Event: nextEvent,
+					OriginalEvent: nextEvent,
 					Context: application.EventContext{
 						UserID: userID,
 					},
@@ -35,7 +33,7 @@ func PersistNewEvents(next HandlerFuncReturningRequest) HandlerFuncReturningRequ
 			}
 			if _, isManuscriptEvent := nextEvent.(events.ManuscriptEvent); isManuscriptEvent {
 				contextualizedManuscriptEvents = append(contextualizedManuscriptEvents, application.ContextualizedEvent{
-					Event: nextEvent,
+					OriginalEvent: nextEvent,
 					Context: application.EventContext{
 						UserID: userID,
 					},
@@ -44,14 +42,16 @@ func PersistNewEvents(next HandlerFuncReturningRequest) HandlerFuncReturningRequ
 		}
 		ctx := r.Context()
 		if len(contextualizedUserEvents) != 0 {
-			err := app.UsersHistory.Append(ctx, contextualizedUserEvents)
+			usersHistory := ctx.Value(contexts.UsersHistoryContextKey).(application.UsersHistory)
+			err := usersHistory.Append(ctx, contextualizedUserEvents)
 			if err != nil {
 				helpers.ManageError(w, err)
 				return r
 			}
 		}
 		if len(contextualizedManuscriptEvents) != 0 {
-			err := app.ManuscriptsHistory.Append(ctx, contextualizedManuscriptEvents)
+			manuscriptsHistory := ctx.Value(contexts.ManuscriptsHistoryContextKey).(application.ManuscriptsHistory)
+			err := manuscriptsHistory.Append(ctx, contextualizedManuscriptEvents)
 			if err != nil {
 				helpers.ManageError(w, err)
 				return r

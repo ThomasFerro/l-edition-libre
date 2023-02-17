@@ -2,26 +2,26 @@ package contexts
 
 import (
 	"context"
-
-	"github.com/ThomasFerro/l-edition-libre/events"
 )
 
 const UserIDContextKey = "UserID"
 const NewEventsContextKey = "NewEvents"
 const ManuscriptIDContextKey = "ManuscriptID"
 const ApplicationContextKey = "Application"
-const UserHistoryContextKey = "UserHistory"
+const UsersHistoryContextKey = "UserHistory"
+const ContextualizedUserHistoryContextKey = "ContextualizedUserHistory"
 const ManuscriptsHistoryContextKey = "ManuscriptsHistory"
-const ManuscriptHistoryContextKey = "ManuscriptHistory"
+const ContextualizedManuscriptsHistoryContextKey = "ContextualizedManuscriptsHistory"
+const ContextualizedManuscriptHistoryContextKey = "ContextualizedManuscriptHistory"
 
-// TODO: Pas ouf ici non plus
-func UserHistoryFromContext(ctx context.Context) []events.Event {
-	return ctx.Value(UserHistoryContextKey).([]events.Event)
+func FromContext[T any](ctx context.Context, key string) T {
+	return ctx.Value(key).(T)
 }
 
-func ManuscriptHistoryFromContext(ctx context.Context) []events.Event {
-	return ctx.Value(ManuscriptHistoryContextKey).([]events.Event)
-}
-func ManuscriptsHistoryFromContext(ctx context.Context) [][]events.Event {
-	return ctx.Value(ManuscriptsHistoryContextKey).([][]events.Event)
+func FromContextOrDefault[T any](ctx context.Context, key string, defaultValue T) T {
+	value := ctx.Value(key)
+	if value == nil {
+		return defaultValue
+	}
+	return value.(T)
 }

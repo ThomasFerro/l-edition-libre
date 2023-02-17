@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 
+	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"github.com/ThomasFerro/l-edition-libre/events"
 	"github.com/google/uuid"
 	"golang.org/x/exp/slog"
@@ -30,12 +31,9 @@ func NewUserID() UserID {
 	return UserID(uuid.New())
 }
 
-func isAnEditor(history UsersHistory, userID UserID) (bool, error) {
-	forUser, err := history.For(userID)
-	if err != nil {
-		return false, err
-	}
-	for _, nextEvent := range ToEvents(forUser) {
+func IsAnEditor(ctx context.Context) (bool, error) {
+	history := contexts.FromContextOrDefault(ctx, contexts.ContextualizedUserHistoryContextKey, []events.Event{})
+	for _, nextEvent := range history {
 		_, isAUserEditorEvent := nextEvent.(events.UserPromotedToEditor)
 		if isAUserEditorEvent {
 			return true, nil
@@ -45,29 +43,25 @@ func isAnEditor(history UsersHistory, userID UserID) (bool, error) {
 	return false, nil
 }
 
-func (app Application) UserHaveAccessToManuscript(userID UserID, manuscriptID ManuscriptID) (bool, error) {
-	isAnEditor, err := isAnEditor(app.UsersHistory, userID)
+func UserHaveAccessToManuscript(ctx context.Context) (bool, error) {
+	isAnEditor, err := IsAnEditor(ctx)
 	if err != nil {
-		slog.Warn("user role check error", "user_id", userID, "manuscript_id", manuscriptID, "error", err)
+		slog.Warn("user role check error", "error", err)
 		return false, err
 	}
 	if isAnEditor {
 		return true, nil
 	}
-	isManuscriptWriter, err := isTheManuscriptWriter(app.ManuscriptsHistory, userID, manuscriptID)
+	isManuscriptWriter, err := isTheManuscriptWriter(ctx)
 	if err != nil {
-		slog.Warn("user's link to manuscript check error", "user_id", userID, "manuscript_id", manuscriptID, "error", err)
+		slog.Warn("user's link to manuscript check error", "error", err)
 		return false, err
 	}
 	if isManuscriptWriter {
 		return true, nil
 	}
-	slog.Warn("user is not the writer nor an editor", "user_id", userID, "manuscript_id", manuscriptID)
+	slog.Warn("user is not the writer nor an editor")
 	return false, nil
-}
-
-func (app Application) UserIsAnEditor(userID UserID) (bool, error) {
-	return isAnEditor(app.UsersHistory, userID)
 }
 
 type UsersHistory interface {

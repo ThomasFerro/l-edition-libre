@@ -5,11 +5,12 @@ import (
 
 	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"github.com/ThomasFerro/l-edition-libre/domain"
+	"github.com/ThomasFerro/l-edition-libre/events"
 )
 
 type ManuscriptStatus struct{}
 
 func HandleManuscriptStatus(ctx context.Context, query Query) (interface{}, error) {
-	history := contexts.ManuscriptHistoryFromContext(ctx)
-	return domain.Rehydrate(history).Status, nil
+	history := contexts.FromContext[[]events.DecoratedEvent](ctx, contexts.ContextualizedManuscriptsHistoryContextKey)
+	return domain.Rehydrate(events.ToEvents(history)).Status, nil
 }

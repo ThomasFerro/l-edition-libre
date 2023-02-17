@@ -123,7 +123,7 @@ func CallWithHeaders(ctx context.Context, url string, method string, headers map
 
 	err = extractResponse(response, responseDto)
 	if err != nil {
-		return ctx, fmt.Errorf("unable to extract response: %v", err)
+		return ctx, fmt.Errorf("unable to extract response(%v): %v", response.StatusCode, err)
 	}
 
 	return ctx, nil

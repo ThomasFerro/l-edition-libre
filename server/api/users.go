@@ -66,13 +66,15 @@ func handlePromoteToEditor(w http.ResponseWriter, r *http.Request) *http.Request
 	return r
 }
 
-func handleUsersFuncs(app application.Application) {
+func handleUsersFuncs(app application.Application, userHistory application.UsersHistory) {
 	routes := []router.Route{
 		{
 			Path:   "/api/users",
 			Method: "POST",
 			Middlewares: []middlewares.Middleware{
 				middlewares.PersistNewEvents,
+				middlewares.InjectContextualizedUserHistory,
+				middlewares.InjectUsersHistory(userHistory),
 				middlewares.InjectApplication(app),
 			},
 			Handler: handleAccountCreation,
@@ -83,7 +85,8 @@ func handleUsersFuncs(app application.Application) {
 			Middlewares: []middlewares.Middleware{
 				middlewares.PersistNewEvents,
 				middlewares.RequiresAdminApiKey,
-				middlewares.InjectHistory(),
+				middlewares.InjectContextualizedUserHistory,
+				middlewares.InjectUsersHistory(userHistory),
 				middlewares.ExtractUserID,
 				middlewares.InjectApplication(app),
 			},

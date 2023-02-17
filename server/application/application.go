@@ -16,9 +16,13 @@ type EventContext struct {
 	UserID
 }
 type ContextualizedEvent struct {
-	Event        events.Event
-	Context      EventContext
-	ManuscriptID ManuscriptID
+	OriginalEvent events.Event
+	Context       EventContext
+	ManuscriptID  ManuscriptID
+}
+
+func (e ContextualizedEvent) Event() events.Event {
+	return e.OriginalEvent
 }
 
 func ToEvents(toMap []ContextualizedEvent) []events.Event {
@@ -36,13 +40,9 @@ type queryType string
 type queryHandler func(context.Context, queries.Query) (interface{}, error)
 type ManagedQueries = map[queryType]queryHandler
 
-// TODO: A terme, il faudrait que l'app ne s'occupe que de faire du dispatch de commandes / queries et laisse
-// les history à la couche au-dessus
 type Application struct {
-	ManuscriptsHistory ManuscriptsHistory
-	UsersHistory       UsersHistory
-	managedCommands    ManagedCommands
-	managedQueries     ManagedQueries
+	managedCommands ManagedCommands
+	managedQueries  ManagedQueries
 }
 
 func (app Application) manageCommandReturn(ctx context.Context, newEvents []events.Event, err error) (context.Context, error) {
@@ -71,10 +71,8 @@ func (app Application) Query(ctx context.Context, query queries.Query) (interfac
 	return nil, fmt.Errorf("unhandled query %v", sentQueryType)
 }
 
-func NewApplication(manuscriptsHistory ManuscriptsHistory, usersHistory UsersHistory, managedCommands ManagedCommands, managedQueries ManagedQueries) Application {
+func NewApplication(managedCommands ManagedCommands, managedQueries ManagedQueries) Application {
 	return Application{
-		manuscriptsHistory,
-		usersHistory,
 		managedCommands,
 		managedQueries,
 	}

@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 
+	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"github.com/ThomasFerro/l-edition-libre/domain"
 	"github.com/ThomasFerro/l-edition-libre/events"
 	"github.com/google/uuid"
@@ -34,13 +35,11 @@ type Manuscripts interface {
 	Persists(ManuscriptID, domain.Manuscript) error
 }
 
-func isTheManuscriptWriter(history ManuscriptsHistory, userID UserID, manuscriptID ManuscriptID) (bool, error) {
-	forManuscript, err := history.For(manuscriptID)
-	if err != nil {
-		return false, err
-	}
-	for _, nextEvent := range forManuscript {
-		_, manuscriptSubmittedEvent := nextEvent.Event.(events.ManuscriptSubmitted)
+func isTheManuscriptWriter(ctx context.Context) (bool, error) {
+	history := contexts.FromContext[[]ContextualizedEvent](ctx, contexts.ContextualizedManuscriptHistoryContextKey)
+	userID := ctx.Value(contexts.UserIDContextKey).(UserID)
+	for _, nextEvent := range history {
+		_, manuscriptSubmittedEvent := nextEvent.Event().(events.ManuscriptSubmitted)
 		if !manuscriptSubmittedEvent {
 			continue
 		}

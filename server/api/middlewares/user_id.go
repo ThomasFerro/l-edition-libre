@@ -10,6 +10,14 @@ import (
 
 const UserIDHeader = "X-User-Id"
 
+func TryGetUserIdFromRequest(r *http.Request) (application.UserID, bool) {
+	value := r.Context().Value(contexts.UserIDContextKey)
+	if value == nil {
+		return application.UserID{}, false
+	}
+	return value.(application.UserID), true
+}
+
 func UserIdFromRequest(r *http.Request) application.UserID {
 	return r.Context().Value(contexts.UserIDContextKey).(application.UserID)
 }
@@ -22,7 +30,7 @@ func ExtractUserID(next HandlerFuncReturningRequest) HandlerFuncReturningRequest
 	return func(w http.ResponseWriter, r *http.Request) *http.Request {
 		userId := r.Header.Get(UserIDHeader)
 		if userId == "" {
-			return r
+			return next(w, r)
 		}
 		parsed, err := application.ParseUserID(userId)
 		if err != nil {
