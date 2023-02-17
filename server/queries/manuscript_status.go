@@ -11,6 +11,6 @@ import (
 type ManuscriptStatus struct{}
 
 func HandleManuscriptStatus(ctx context.Context, query Query) (interface{}, error) {
-	history := contexts.FromContext[[]events.DecoratedEvent](ctx, contexts.ContextualizedManuscriptsHistoryContextKey)
+	history := contexts.FromContext[[]events.DecoratedEvent](ctx, contexts.ContextualizedManuscriptHistoryContextKey)
 	return domain.Rehydrate(events.ToEvents(history)).Status, nil
 }

@@ -2,7 +2,6 @@ package middlewares
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/ThomasFerro/l-edition-libre/api/helpers"
@@ -29,6 +28,23 @@ func InjectManuscriptsHistory(manuscriptsHistory application.ManuscriptsHistory)
 	}
 }
 
+func toTODOs(original map[application.ManuscriptID][]application.ContextualizedEvent) [][]events.DecoratedEvent {
+	returned := [][]events.DecoratedEvent{}
+
+	for _, nextHistory := range original {
+		returned = append(returned, toTODO(nextHistory))
+	}
+	return returned
+}
+
+func toTODO(original []application.ContextualizedEvent) []events.DecoratedEvent {
+	mappedHistory := []events.DecoratedEvent{}
+	for _, nextEvent := range original {
+		mappedHistory = append(mappedHistory, nextEvent)
+	}
+	return mappedHistory
+}
+
 func InjectContextualizedManuscriptsHistory(next HandlerFuncReturningRequest) HandlerFuncReturningRequest {
 	return func(w http.ResponseWriter, r *http.Request) *http.Request {
 		manuscriptsHistory, err := manuscriptsHistory(r.Context())
@@ -36,12 +52,10 @@ func InjectContextualizedManuscriptsHistory(next HandlerFuncReturningRequest) Ha
 			helpers.ManageError(w, err)
 			return r
 		}
-		fmt.Printf("\n\n manuscriptsHistory %v \n\n", manuscriptsHistory)
-		r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedManuscriptsHistoryContextKey, manuscriptsHistory))
+		r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedManuscriptsHistoryContextKey, toTODOs(manuscriptsHistory)))
 		manuscriptID, found := TryGetManuscriptID(r)
-		fmt.Printf("\n\n manuscriptID %v, found %v  ?? %v \n\n", manuscriptID, found, manuscriptsHistory[manuscriptID])
 		if found {
-			r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedManuscriptHistoryContextKey, manuscriptsHistory[manuscriptID]))
+			r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedManuscriptHistoryContextKey, toTODO(manuscriptsHistory[manuscriptID])))
 		}
 		return next(w, r)
 	}
@@ -52,7 +66,7 @@ func InjectContextualizedUserHistory(next HandlerFuncReturningRequest) HandlerFu
 		usersHistory := usersHistoryFromContext(r.Context())
 		userID, found := TryGetUserIdFromRequest(r)
 		if !found {
-			r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedUserHistoryContextKey, []events.Event{}))
+			r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedUserHistoryContextKey, []application.ContextualizedEvent{}))
 			return next(w, r)
 		}
 		userhistory, err := usersHistory.For(userID)
@@ -60,7 +74,7 @@ func InjectContextualizedUserHistory(next HandlerFuncReturningRequest) HandlerFu
 			helpers.ManageError(w, err)
 			return r
 		}
-		r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedUserHistoryContextKey, application.ToEvents(userhistory)))
+		r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedUserHistoryContextKey, userhistory))
 		return next(w, r)
 	}
 }

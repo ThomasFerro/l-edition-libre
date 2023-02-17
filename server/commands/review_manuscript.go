@@ -16,7 +16,6 @@ func HandleReviewManuscript(ctx context.Context, command Command) ([]events.Even
 	history := contexts.FromContext[[]events.DecoratedEvent](ctx, contexts.ContextualizedManuscriptHistoryContextKey)
 
 	manuscript := domain.Rehydrate(events.ToEvents(history))
-	fmt.Printf("\n\n history %v  manuscript %v \n\n", history, manuscript)
 	if manuscript.Status != domain.PendingReview {
 		return nil, AManuscriptShouldBePendingReviewToBeReviewed{
 			actualStatus: manuscript.Status,

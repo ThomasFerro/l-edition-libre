@@ -36,14 +36,14 @@ type Manuscripts interface {
 }
 
 func isTheManuscriptWriter(ctx context.Context) (bool, error) {
-	history := contexts.FromContext[[]ContextualizedEvent](ctx, contexts.ContextualizedManuscriptHistoryContextKey)
+	history := contexts.FromContext[[]events.DecoratedEvent](ctx, contexts.ContextualizedManuscriptHistoryContextKey)
 	userID := ctx.Value(contexts.UserIDContextKey).(UserID)
 	for _, nextEvent := range history {
 		_, manuscriptSubmittedEvent := nextEvent.Event().(events.ManuscriptSubmitted)
 		if !manuscriptSubmittedEvent {
 			continue
 		}
-		if nextEvent.Context.UserID == userID {
+		if nextEvent.(ContextualizedEvent).Context.UserID == userID {
 			return true, nil
 		}
 	}
