@@ -14,7 +14,7 @@ func HandleManuscriptsToReview(ctx context.Context, query Query) (interface{}, e
 	historyForManuscripts := contexts.FromContext[[][]events.DecoratedEvent](ctx, contexts.ContextualizedManuscriptsHistoryContextKey{})
 	manuscripts := make([]domain.Manuscript, 0)
 	for _, historyForManuscript := range historyForManuscripts {
-		manuscript := domain.Rehydrate(events.ToEvents(historyForManuscript))
+		manuscript := domain.RehydrateManuscript(events.ToEvents(historyForManuscript))
 		if manuscript.Status == domain.PendingReview {
 			manuscripts = append(manuscripts, manuscript)
 		}

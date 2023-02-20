@@ -10,5 +10,5 @@ import (
 
 func rehydrateFromContext(ctx context.Context) domain.Manuscript {
 	history := contexts.FromContext[[]events.DecoratedEvent](ctx, contexts.ContextualizedManuscriptHistoryContextKey{})
-	return domain.Rehydrate(events.ToEvents(history))
+	return domain.RehydrateManuscript(events.ToEvents(history))
 }

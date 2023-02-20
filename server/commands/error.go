@@ -2,6 +2,7 @@ package commands
 
 import "fmt"
 
+// TODO: Application error ?
 type CommandError interface {
 	Name() string
 	Error() string

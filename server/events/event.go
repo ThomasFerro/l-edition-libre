@@ -10,6 +10,10 @@ type ManuscriptEvent interface {
 	ManuscriptEventName() string
 }
 
+type PublicationEvent interface {
+	PublicationEventName() string
+}
+
 type DecoratedEvent interface {
 	Event() Event
 }

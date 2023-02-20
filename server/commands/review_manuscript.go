@@ -28,7 +28,7 @@ func (c ReviewManuscript) String() string {
 }
 
 type AManuscriptShouldBePendingReviewToBeReviewed struct {
-	actualStatus domain.Status
+	actualStatus domain.ManuscriptStatus
 }
 
 func (commandError AManuscriptShouldBePendingReviewToBeReviewed) Error() string {

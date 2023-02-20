@@ -8,17 +8,17 @@ import (
 )
 
 type Manuscript struct {
-	Status
+	Status ManuscriptStatus
 	Title  string
 	Author string
 }
 
-type Status string
+type ManuscriptStatus string
 
 const (
-	PendingReview Status = "PendingReview"
-	Canceled      Status = "Canceled"
-	Reviewed      Status = "Reviewed"
+	PendingReview ManuscriptStatus = "PendingReview"
+	Canceled      ManuscriptStatus = "Canceled"
+	Reviewed      ManuscriptStatus = "Reviewed"
 )
 
 func (m Manuscript) applyManuscriptSubmitted(event events.ManuscriptSubmitted) Manuscript {
@@ -39,7 +39,7 @@ func (m Manuscript) String() string {
 	return fmt.Sprintf("Manuscript{Title %v, Author %v, Status %v}", m.Title, m.Author, m.Status)
 }
 
-func Rehydrate(history []events.Event) Manuscript {
+func RehydrateManuscript(history []events.Event) Manuscript {
 	manuscript := Manuscript{}
 
 	for _, nextEvent := range history {

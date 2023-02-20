@@ -21,17 +21,23 @@ func Start() {
 		"commands.ReviewManuscript":           commands.HandleReviewManuscript,
 		"commands.CancelManuscriptSubmission": commands.HandleCancelManuscriptSubmission,
 	}
+	managedEvents := application.ManagedEvents{
+		"events.ManuscriptReviewed": application.HandleManuscriptReviewed,
+	}
 	managedQueries := application.ManagedQueries{
 		"queries.ManuscriptStatus":    queries.HandleManuscriptStatus,
 		"queries.WriterManuscripts":   queries.HandleWriterManuscripts,
 		"queries.ManuscriptsToReview": queries.HandleManuscriptsToReview,
+		"queries.PublicationStatus":   queries.HandlePublicationStatus,
 	}
 	manuscriptsHistory := persistency.NewManuscriptsHistory()
+	publicationsHistory := persistency.NewPublicationsHistory()
 	usersHistory := persistency.NewUsersHistory()
-	app := application.NewApplication(managedCommands, managedQueries)
+	app := application.NewApplication(managedCommands, managedEvents, managedQueries)
 	slog.Info("setup HTTP API")
 
-	handleManuscriptsFuncs(app, usersHistory, manuscriptsHistory)
+	handleManuscriptsFuncs(app, usersHistory, publicationsHistory, manuscriptsHistory)
+	handlePublicationsFuncs(app, publicationsHistory)
 	handleUsersFuncs(app, usersHistory)
 
 	slog.Info("HTTP API start listening")

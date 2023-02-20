@@ -121,7 +121,7 @@ func handleManuscriptState(w http.ResponseWriter, r *http.Request) *http.Request
 		helpers.ManageError(w, err)
 		return r
 	}
-	status, castedSuccessfuly := queryResult.(domain.Status)
+	status, castedSuccessfuly := queryResult.(domain.ManuscriptStatus)
 	if !castedSuccessfuly {
 		slog.Error("manuscript status query result casting error", err, "manuscript_id", manuscriptID.String())
 		helpers.ManageError(w, err)
@@ -134,7 +134,7 @@ func handleManuscriptState(w http.ResponseWriter, r *http.Request) *http.Request
 	return r
 }
 
-func handleManuscriptsFuncs(app application.Application, usersHistory application.UsersHistory, manuscriptsHistory application.ManuscriptsHistory) {
+func handleManuscriptsFuncs(app application.Application, usersHistory application.UsersHistory, publicationsHistory application.PublicationsHistory, manuscriptsHistory application.ManuscriptsHistory) {
 	routes := []router.Route{
 		{
 			Path:   "/api/manuscripts",
@@ -202,6 +202,7 @@ func handleManuscriptsFuncs(app application.Application, usersHistory applicatio
 				middlewares.InjectContextualizedUserHistory,
 				middlewares.ExtractUserID,
 				middlewares.ExtractManuscriptID,
+				middlewares.InjectPublicationsHistory(publicationsHistory),
 				middlewares.InjectManuscriptsHistory(manuscriptsHistory),
 				middlewares.InjectUsersHistory(usersHistory),
 				middlewares.InjectApplication(app),

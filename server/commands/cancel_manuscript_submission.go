@@ -27,7 +27,7 @@ func (c CancelManuscriptSubmission) String() string {
 }
 
 type AManuscriptShouldBePendingReviewForItsSubmissionToBeCanceled struct {
-	actualStatus domain.Status
+	actualStatus domain.ManuscriptStatus
 }
 
 func (commandError AManuscriptShouldBePendingReviewForItsSubmissionToBeCanceled) Error() string {

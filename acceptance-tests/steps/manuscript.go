@@ -65,7 +65,7 @@ func getManuscriptStatus(ctx context.Context, manuscriptName string) (context.Co
 	return ctx, manuscript, nil
 }
 
-func manuscriptStatusShouldBe(ctx context.Context, manuscriptName string, expectedStatus domain.Status) (context.Context, error) {
+func manuscriptStatusShouldBe(ctx context.Context, manuscriptName string, expectedStatus domain.ManuscriptStatus) (context.Context, error) {
 	ctx, manuscript, err := getManuscriptStatus(ctx, manuscriptName)
 	if err != nil {
 		return ctx, fmt.Errorf("cannot check manuscript's status: %v", err)
@@ -86,8 +86,12 @@ func shouldBeCanceled(ctx context.Context, manuscriptName string) (context.Conte
 }
 
 func isEventuallyPublished(ctx context.Context, manuscriptName string) (context.Context, error) {
-	// TODO: Gérer l'asynchrone en testant l'état de la publication créée
-	return manuscriptStatusShouldBe(ctx, manuscriptName, domain.Reviewed)
+	ctx, manuscriptID := helpers.GetManuscriptID(ctx, manuscriptName)
+	ctx, err := manuscriptStatusShouldBe(ctx, manuscriptName, domain.Reviewed)
+	if err != nil {
+		return nil, err
+	}
+	return isPublished(ctx, manuscriptID.String())
 }
 
 func tryGetStatus(ctx context.Context, manuscriptName string) (context.Context, error) {

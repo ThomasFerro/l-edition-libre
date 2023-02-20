@@ -14,7 +14,7 @@ func HandleWriterManuscripts(ctx context.Context, query Query) (interface{}, err
 	historyForManuscripts := contexts.FromContext[[][]events.DecoratedEvent](ctx, contexts.ContextualizedManuscriptsHistoryContextKey{})
 	manuscripts := make([]domain.Manuscript, 0)
 	for _, historyForManuscript := range historyForManuscripts {
-		manuscripts = append(manuscripts, domain.Rehydrate(events.ToEvents(historyForManuscript)))
+		manuscripts = append(manuscripts, domain.RehydrateManuscript(events.ToEvents(historyForManuscript)))
 	}
 	return manuscripts, nil
 }
