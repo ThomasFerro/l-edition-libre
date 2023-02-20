@@ -11,7 +11,7 @@ import (
 const UserIDHeader = "X-User-Id"
 
 func TryGetUserIdFromRequest(r *http.Request) (application.UserID, bool) {
-	value := r.Context().Value(contexts.UserIDContextKey)
+	value := r.Context().Value(contexts.UserIDContextKey{})
 	if value == nil {
 		return application.UserID{}, false
 	}
@@ -19,11 +19,11 @@ func TryGetUserIdFromRequest(r *http.Request) (application.UserID, bool) {
 }
 
 func UserIdFromRequest(r *http.Request) application.UserID {
-	return r.Context().Value(contexts.UserIDContextKey).(application.UserID)
+	return r.Context().Value(contexts.UserIDContextKey{}).(application.UserID)
 }
 
 func SetUserId(r *http.Request, userID application.UserID) *http.Request {
-	return r.WithContext(context.WithValue(r.Context(), contexts.UserIDContextKey, userID))
+	return r.WithContext(context.WithValue(r.Context(), contexts.UserIDContextKey{}, userID))
 }
 
 func ExtractUserID(next HandlerFuncReturningRequest) HandlerFuncReturningRequest {
@@ -38,7 +38,7 @@ func ExtractUserID(next HandlerFuncReturningRequest) HandlerFuncReturningRequest
 			return r
 		}
 
-		r = r.WithContext(context.WithValue(r.Context(), contexts.UserIDContextKey, parsed))
+		r = r.WithContext(context.WithValue(r.Context(), contexts.UserIDContextKey{}, parsed))
 
 		return next(w, r)
 	}

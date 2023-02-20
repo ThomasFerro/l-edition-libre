@@ -13,7 +13,7 @@ func PersistNewEvents(next HandlerFuncReturningRequest) HandlerFuncReturningRequ
 	return func(w http.ResponseWriter, r *http.Request) *http.Request {
 		r = next(w, r)
 
-		newEvents := r.Context().Value(contexts.NewEventsContextKey)
+		newEvents := r.Context().Value(contexts.NewEventsContextKey{})
 		if newEvents == nil {
 			return r
 		}
@@ -42,7 +42,7 @@ func PersistNewEvents(next HandlerFuncReturningRequest) HandlerFuncReturningRequ
 		}
 		ctx := r.Context()
 		if len(contextualizedUserEvents) != 0 {
-			usersHistory := ctx.Value(contexts.UsersHistoryContextKey).(application.UsersHistory)
+			usersHistory := ctx.Value(contexts.UsersHistoryContextKey{}).(application.UsersHistory)
 			err := usersHistory.Append(ctx, contextualizedUserEvents)
 			if err != nil {
 				helpers.ManageError(w, err)
@@ -50,7 +50,7 @@ func PersistNewEvents(next HandlerFuncReturningRequest) HandlerFuncReturningRequ
 			}
 		}
 		if len(contextualizedManuscriptEvents) != 0 {
-			manuscriptsHistory := ctx.Value(contexts.ManuscriptsHistoryContextKey).(application.ManuscriptsHistory)
+			manuscriptsHistory := ctx.Value(contexts.ManuscriptsHistoryContextKey{}).(application.ManuscriptsHistory)
 			err := manuscriptsHistory.Append(ctx, contextualizedManuscriptEvents)
 			if err != nil {
 				helpers.ManageError(w, err)

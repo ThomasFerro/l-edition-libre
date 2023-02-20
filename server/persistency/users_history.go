@@ -16,7 +16,7 @@ func (users UsersHistory) For(userID application.UserID) ([]application.Contextu
 }
 
 func (users UsersHistory) Append(ctx context.Context, newEvents []application.ContextualizedEvent) error {
-	userID := ctx.Value(contexts.UserIDContextKey).(application.UserID)
+	userID := ctx.Value(contexts.UserIDContextKey{}).(application.UserID)
 	persistedEvents, exists := users.history[userID]
 	if !exists {
 		persistedEvents = make([]application.ContextualizedEvent, 0)

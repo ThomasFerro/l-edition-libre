@@ -95,7 +95,7 @@ type ManuscriptDto struct {
 }
 
 func handleCancelManuscriptSubmission(w http.ResponseWriter, r *http.Request) *http.Request {
-	manuscriptID := r.Context().Value(contexts.ManuscriptIDContextKey).(application.ManuscriptID)
+	manuscriptID := r.Context().Value(contexts.ManuscriptIDContextKey{}).(application.ManuscriptID)
 	// TODO: slog avec le context pour ne pas avoir à remettre les params chaque fois ?
 	slog.Info("manuscript submission cancelling request", "manuscript_id", manuscriptID.String())
 	app := middlewares.ApplicationFromRequest(r)

@@ -36,8 +36,8 @@ type Manuscripts interface {
 }
 
 func isTheManuscriptWriter(ctx context.Context) (bool, error) {
-	history := contexts.FromContext[[]events.DecoratedEvent](ctx, contexts.ContextualizedManuscriptHistoryContextKey)
-	userID := ctx.Value(contexts.UserIDContextKey).(UserID)
+	history := contexts.FromContext[[]events.DecoratedEvent](ctx, contexts.ContextualizedManuscriptHistoryContextKey{})
+	userID := ctx.Value(contexts.UserIDContextKey{}).(UserID)
 	for _, nextEvent := range history {
 		_, manuscriptSubmittedEvent := nextEvent.Event().(events.ManuscriptSubmitted)
 		if !manuscriptSubmittedEvent {
@@ -48,18 +48,6 @@ func isTheManuscriptWriter(ctx context.Context) (bool, error) {
 		}
 	}
 	return false, nil
-}
-
-func ToEventsByManuscript(toMap map[ManuscriptID][]ContextualizedEvent) [][]events.Event {
-	returned := make([][]events.Event, 0)
-	for _, nextManuscript := range toMap {
-		mappedEvents := make([]events.Event, 0)
-		for _, nextEvent := range nextManuscript {
-			mappedEvents = append(mappedEvents, nextEvent.Event)
-		}
-		returned = append(returned, mappedEvents)
-	}
-	return returned
 }
 
 type ManuscriptsHistory interface {

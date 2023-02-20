@@ -36,7 +36,7 @@ func (manuscripts ManuscriptsHistory) ForAllOfUser(userID application.UserID) (m
 }
 
 func (manuscripts ManuscriptsHistory) Append(ctx context.Context, newEvents []application.ContextualizedEvent) error {
-	manuscriptID := ctx.Value(contexts.ManuscriptIDContextKey).(application.ManuscriptID)
+	manuscriptID := ctx.Value(contexts.ManuscriptIDContextKey{}).(application.ManuscriptID)
 	persistedEvents, exists := manuscripts.history[manuscriptID]
 	if !exists {
 		persistedEvents = make([]application.ContextualizedEvent, 0)

@@ -11,7 +11,7 @@ import (
 type WriterManuscripts struct{}
 
 func HandleWriterManuscripts(ctx context.Context, query Query) (interface{}, error) {
-	historyForManuscripts := contexts.FromContext[[][]events.DecoratedEvent](ctx, contexts.ContextualizedManuscriptsHistoryContextKey)
+	historyForManuscripts := contexts.FromContext[[][]events.DecoratedEvent](ctx, contexts.ContextualizedManuscriptsHistoryContextKey{})
 	manuscripts := make([]domain.Manuscript, 0)
 	for _, historyForManuscript := range historyForManuscripts {
 		manuscripts = append(manuscripts, domain.Rehydrate(events.ToEvents(historyForManuscript)))

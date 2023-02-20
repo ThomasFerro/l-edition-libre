@@ -10,7 +10,7 @@ import (
 )
 
 func TryGetManuscriptID(r *http.Request) (application.ManuscriptID, bool) {
-	value := r.Context().Value(contexts.ManuscriptIDContextKey)
+	value := r.Context().Value(contexts.ManuscriptIDContextKey{})
 	if value == nil {
 		return application.ManuscriptID{}, false
 	}
@@ -18,11 +18,11 @@ func TryGetManuscriptID(r *http.Request) (application.ManuscriptID, bool) {
 }
 
 func GetManuscriptID(r *http.Request) application.ManuscriptID {
-	return r.Context().Value(contexts.ManuscriptIDContextKey).(application.ManuscriptID)
+	return r.Context().Value(contexts.ManuscriptIDContextKey{}).(application.ManuscriptID)
 }
 
 func SetManuscriptID(r *http.Request, manuscriptID application.ManuscriptID) *http.Request {
-	return r.WithContext(context.WithValue(r.Context(), contexts.ManuscriptIDContextKey, manuscriptID))
+	return r.WithContext(context.WithValue(r.Context(), contexts.ManuscriptIDContextKey{}, manuscriptID))
 }
 
 func ExtractManuscriptID(next HandlerFuncReturningRequest) HandlerFuncReturningRequest {

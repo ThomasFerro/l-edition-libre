@@ -13,7 +13,7 @@ import (
 func InjectUsersHistory(usersHistory application.UsersHistory) Middleware {
 	return func(next HandlerFuncReturningRequest) HandlerFuncReturningRequest {
 		return func(w http.ResponseWriter, r *http.Request) *http.Request {
-			r = r.WithContext(context.WithValue(r.Context(), contexts.UsersHistoryContextKey, usersHistory))
+			r = r.WithContext(context.WithValue(r.Context(), contexts.UsersHistoryContextKey{}, usersHistory))
 			return next(w, r)
 		}
 	}
@@ -22,22 +22,22 @@ func InjectUsersHistory(usersHistory application.UsersHistory) Middleware {
 func InjectManuscriptsHistory(manuscriptsHistory application.ManuscriptsHistory) Middleware {
 	return func(next HandlerFuncReturningRequest) HandlerFuncReturningRequest {
 		return func(w http.ResponseWriter, r *http.Request) *http.Request {
-			r = r.WithContext(context.WithValue(r.Context(), contexts.ManuscriptsHistoryContextKey, manuscriptsHistory))
+			r = r.WithContext(context.WithValue(r.Context(), contexts.ManuscriptsHistoryContextKey{}, manuscriptsHistory))
 			return next(w, r)
 		}
 	}
 }
 
-func toTODOs(original map[application.ManuscriptID][]application.ContextualizedEvent) [][]events.DecoratedEvent {
+func mapHistories(original map[application.ManuscriptID][]application.ContextualizedEvent) [][]events.DecoratedEvent {
 	returned := [][]events.DecoratedEvent{}
 
 	for _, nextHistory := range original {
-		returned = append(returned, toTODO(nextHistory))
+		returned = append(returned, mapHistory(nextHistory))
 	}
 	return returned
 }
 
-func toTODO(original []application.ContextualizedEvent) []events.DecoratedEvent {
+func mapHistory(original []application.ContextualizedEvent) []events.DecoratedEvent {
 	mappedHistory := []events.DecoratedEvent{}
 	for _, nextEvent := range original {
 		mappedHistory = append(mappedHistory, nextEvent)
@@ -52,10 +52,10 @@ func InjectContextualizedManuscriptsHistory(next HandlerFuncReturningRequest) Ha
 			helpers.ManageError(w, err)
 			return r
 		}
-		r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedManuscriptsHistoryContextKey, toTODOs(manuscriptsHistory)))
+		r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedManuscriptsHistoryContextKey{}, mapHistories(manuscriptsHistory)))
 		manuscriptID, found := TryGetManuscriptID(r)
 		if found {
-			r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedManuscriptHistoryContextKey, toTODO(manuscriptsHistory[manuscriptID])))
+			r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedManuscriptHistoryContextKey{}, mapHistory(manuscriptsHistory[manuscriptID])))
 		}
 		return next(w, r)
 	}
@@ -66,7 +66,7 @@ func InjectContextualizedUserHistory(next HandlerFuncReturningRequest) HandlerFu
 		usersHistory := usersHistoryFromContext(r.Context())
 		userID, found := TryGetUserIdFromRequest(r)
 		if !found {
-			r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedUserHistoryContextKey, []application.ContextualizedEvent{}))
+			r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedUserHistoryContextKey{}, []application.ContextualizedEvent{}))
 			return next(w, r)
 		}
 		userhistory, err := usersHistory.For(userID)
@@ -74,17 +74,17 @@ func InjectContextualizedUserHistory(next HandlerFuncReturningRequest) HandlerFu
 			helpers.ManageError(w, err)
 			return r
 		}
-		r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedUserHistoryContextKey, userhistory))
+		r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedUserHistoryContextKey{}, userhistory))
 		return next(w, r)
 	}
 }
 
 func manuscriptsHistoryFromContext(ctx context.Context) application.ManuscriptsHistory {
-	return ctx.Value(contexts.ManuscriptsHistoryContextKey).(application.ManuscriptsHistory)
+	return ctx.Value(contexts.ManuscriptsHistoryContextKey{}).(application.ManuscriptsHistory)
 }
 
 func usersHistoryFromContext(ctx context.Context) application.UsersHistory {
-	return ctx.Value(contexts.UsersHistoryContextKey).(application.UsersHistory)
+	return ctx.Value(contexts.UsersHistoryContextKey{}).(application.UsersHistory)
 }
 
 func manuscriptsHistory(ctx context.Context) (map[application.ManuscriptID][]application.ContextualizedEvent, error) {
@@ -93,7 +93,7 @@ func manuscriptsHistory(ctx context.Context) (map[application.ManuscriptID][]app
 		return nil, err
 	}
 	manuscriptsHistory := manuscriptsHistoryFromContext(ctx)
-	userID := ctx.Value(contexts.UserIDContextKey).(application.UserID)
+	userID := ctx.Value(contexts.UserIDContextKey{}).(application.UserID)
 	if isEditor {
 		return manuscriptsHistory.ForAll()
 	}

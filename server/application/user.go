@@ -32,7 +32,7 @@ func NewUserID() UserID {
 }
 
 func IsAnEditor(ctx context.Context) (bool, error) {
-	history := contexts.FromContextOrDefault(ctx, contexts.ContextualizedUserHistoryContextKey, []ContextualizedEvent{})
+	history := contexts.FromContextOrDefault(ctx, contexts.ContextualizedUserHistoryContextKey{}, []ContextualizedEvent{})
 	for _, nextEvent := range history {
 		_, isAUserEditorEvent := nextEvent.Event().(events.UserPromotedToEditor)
 		if isAUserEditorEvent {

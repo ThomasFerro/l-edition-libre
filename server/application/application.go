@@ -11,31 +11,9 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// TODO: un history générique ?
-type EventContext struct {
-	UserID
-}
-type ContextualizedEvent struct {
-	OriginalEvent events.Event
-	Context       EventContext
-	ManuscriptID  ManuscriptID
-}
-
-func (e ContextualizedEvent) Event() events.Event {
-	return e.OriginalEvent
-}
-
-func ToEvents(toMap []ContextualizedEvent) []events.Event {
-	returned := make([]events.Event, 0)
-	for _, nextEvent := range toMap {
-		returned = append(returned, nextEvent.Event)
-	}
-	return returned
-}
-
-type CommandType string
-type CommandHandler func(context.Context, commands.Command) ([]events.Event, commands.CommandError)
-type ManagedCommands = map[CommandType]CommandHandler
+type commandType string
+type commandHandler func(context.Context, commands.Command) ([]events.Event, commands.CommandError)
+type ManagedCommands = map[commandType]commandHandler
 type queryType string
 type queryHandler func(context.Context, queries.Query) (interface{}, error)
 type ManagedQueries = map[queryType]queryHandler
@@ -46,11 +24,11 @@ type Application struct {
 }
 
 func (app Application) manageCommandReturn(ctx context.Context, newEvents []events.Event, err error) (context.Context, error) {
-	return context.WithValue(ctx, contexts.NewEventsContextKey, newEvents), err
+	return context.WithValue(ctx, contexts.NewEventsContextKey{}, newEvents), err
 }
 
 func (app Application) SendCommand(ctx context.Context, command commands.Command) (context.Context, error) {
-	sentCommandType := CommandType(fmt.Sprintf("%T", command))
+	sentCommandType := commandType(fmt.Sprintf("%T", command))
 	slog.Info("receiving command", "type", string(sentCommandType))
 
 	if commandHandler, exists := app.managedCommands[sentCommandType]; exists {

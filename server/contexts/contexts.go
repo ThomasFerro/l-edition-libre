@@ -4,21 +4,21 @@ import (
 	"context"
 )
 
-const UserIDContextKey = "UserID"
-const NewEventsContextKey = "NewEvents"
-const ManuscriptIDContextKey = "ManuscriptID"
-const ApplicationContextKey = "Application"
-const UsersHistoryContextKey = "UserHistory"
-const ContextualizedUserHistoryContextKey = "ContextualizedUserHistory"
-const ManuscriptsHistoryContextKey = "ManuscriptsHistory"
-const ContextualizedManuscriptsHistoryContextKey = "ContextualizedManuscriptsHistory"
-const ContextualizedManuscriptHistoryContextKey = "ContextualizedManuscriptHistory"
+type UserIDContextKey struct{}
+type NewEventsContextKey struct{}
+type ManuscriptIDContextKey struct{}
+type ApplicationContextKey struct{}
+type UsersHistoryContextKey struct{}
+type ContextualizedUserHistoryContextKey struct{}
+type ManuscriptsHistoryContextKey struct{}
+type ContextualizedManuscriptsHistoryContextKey struct{}
+type ContextualizedManuscriptHistoryContextKey struct{}
 
-func FromContext[T any](ctx context.Context, key string) T {
+func FromContext[T any](ctx context.Context, key interface{}) T {
 	return ctx.Value(key).(T)
 }
 
-func FromContextOrDefault[T any](ctx context.Context, key string, defaultValue T) T {
+func FromContextOrDefault[T any](ctx context.Context, key interface{}, defaultValue T) T {
 	value := ctx.Value(key)
 	if value == nil {
 		return defaultValue
