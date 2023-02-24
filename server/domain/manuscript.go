@@ -2,15 +2,17 @@ package domain
 
 import (
 	"fmt"
+	"net/url"
 
 	"github.com/ThomasFerro/l-edition-libre/events"
 	"golang.org/x/exp/slog"
 )
 
 type Manuscript struct {
-	Status ManuscriptStatus
-	Title  string
-	Author string
+	Status  ManuscriptStatus
+	Title   string
+	Author  string
+	FileURL url.URL
 }
 
 type ManuscriptStatus string
@@ -25,6 +27,7 @@ func (m Manuscript) applyManuscriptSubmitted(event events.ManuscriptSubmitted) M
 	m.Title = event.Title
 	m.Author = event.Author
 	m.Status = PendingReview
+	m.FileURL = event.FileURL
 	return m
 }
 func (m Manuscript) applyManuscriptSubmissionCanceled(event events.ManuscriptSubmissionCanceled) Manuscript {

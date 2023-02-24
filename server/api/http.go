@@ -25,7 +25,7 @@ func Start() {
 		"events.ManuscriptReviewed": application.HandleManuscriptReviewed,
 	}
 	managedQueries := application.ManagedQueries{
-		"queries.ManuscriptStatus":    queries.HandleManuscriptStatus,
+		"queries.ManuscriptState":     queries.HandleManuscriptState,
 		"queries.WriterManuscripts":   queries.HandleWriterManuscripts,
 		"queries.ManuscriptsToReview": queries.HandleManuscriptsToReview,
 		"queries.PublicationStatus":   queries.HandlePublicationStatus,

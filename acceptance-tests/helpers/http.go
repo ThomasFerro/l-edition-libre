@@ -142,11 +142,11 @@ func Call(ctx context.Context, httpRequest HttpRequest) (context.Context, error)
 	return doCall(ctx, request, httpRequest.ResponseDto)
 }
 
-func PostFile(ctx context.Context, url string, filePath string, otherData map[string]string, responseDto interface{}) (context.Context, error) {
+func requestFromFormData(url string, filePath string, otherData map[string]string) (io.Reader, string, error) {
 	file, err := os.Open(filePath)
 	defer file.Close()
 	if err != nil {
-		return ctx, err
+		return nil, "", err
 	}
 
 	body := &bytes.Buffer{}
@@ -155,29 +155,38 @@ func PostFile(ctx context.Context, url string, filePath string, otherData map[st
 
 	part, err := writer.CreateFormFile("file", filepath.Base(file.Name()))
 	if err != nil {
-		return ctx, err
+		return nil, "", err
 	}
 	_, err = io.Copy(part, file)
 	if err != nil {
-		return ctx, err
+		return nil, "", err
 	}
 
 	for dataKey, dataValue := range otherData {
 		formField, err := writer.CreateFormField(dataKey)
 		if err != nil {
-			return ctx, err
+			return nil, "", err
 		}
 		_, err = io.Copy(formField, strings.NewReader(dataValue))
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
+	}
+
+	return body, writer.FormDataContentType(), nil
+}
+
+func PostFile(ctx context.Context, url string, filePath string, otherData map[string]string, responseDto interface{}) (context.Context, error) {
+	body, formDataContentType, err := requestFromFormData(url, filePath, otherData)
+	if err != nil {
+		return ctx, err
 	}
 
 	request, err := http.NewRequest(http.MethodPost, url, body)
 	if err != nil {
-		return ctx, err
+		return nil, err
 	}
-	request.Header.Add("Content-Type", writer.FormDataContentType())
+	request.Header.Add("Content-Type", formDataContentType)
 
 	addUserHeader(ctx, request)
 	return doCall(ctx, request, responseDto)

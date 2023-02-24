@@ -8,9 +8,9 @@ import (
 	"github.com/ThomasFerro/l-edition-libre/events"
 )
 
-type ManuscriptStatus struct{}
+type ManuscriptState struct{}
 
-func HandleManuscriptStatus(ctx context.Context, query Query) (interface{}, error) {
+func HandleManuscriptState(ctx context.Context, query Query) (interface{}, error) {
 	history := contexts.FromContext[[]events.DecoratedEvent](ctx, contexts.ContextualizedManuscriptHistoryContextKey{})
-	return domain.RehydrateManuscript(events.ToEvents(history)).Status, nil
+	return domain.RehydrateManuscript(events.ToEvents(history)), nil
 }

@@ -1,16 +1,19 @@
 package events
 
-import "fmt"
+import (
+	"fmt"
+	"net/url"
+)
 
 type ManuscriptSubmitted struct {
 	Title    string
 	Author   string
 	FileName string
-	FilePath string
+	FileURL  url.URL
 }
 
 func (event ManuscriptSubmitted) String() string {
-	return fmt.Sprintf("ManuscriptSubmitted{Title %v, Author %v}", event.Title, event.Author)
+	return fmt.Sprintf("ManuscriptSubmitted{Title %v, Author %v, FileName %v, FileURL %v}", event.Title, event.Author, event.FileName, event.FileURL)
 }
 
 func (event ManuscriptSubmitted) ManuscriptEventName() string {

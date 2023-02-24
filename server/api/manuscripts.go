@@ -1,9 +1,9 @@
 package api
 
 import (
-	"bytes"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/ThomasFerro/l-edition-libre/api/helpers"
 	"github.com/ThomasFerro/l-edition-libre/api/middlewares"
@@ -12,6 +12,7 @@ import (
 	"github.com/ThomasFerro/l-edition-libre/commands"
 	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"github.com/ThomasFerro/l-edition-libre/domain"
+	"github.com/ThomasFerro/l-edition-libre/ports"
 	"github.com/ThomasFerro/l-edition-libre/queries"
 	"golang.org/x/exp/slog"
 )
@@ -63,37 +64,16 @@ type SubmitManuscriptResponseDto struct {
 }
 
 func handleManuscriptCreation(w http.ResponseWriter, r *http.Request) *http.Request {
-	dto := SubmitManuscriptRequestDto{}
-	multipartReader, err := r.MultipartReader()
+	file, _, err := r.FormFile("file")
 	if err != nil {
-		slog.Error("manuscript creation request multipart reader error", err)
+		slog.Error("manuscript creation request file reading error", err)
 		helpers.ManageError(w, err)
 		return r
 	}
-	for {
-		part, err := multipartReader.NextPart()
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			// slog.Error("manuscript creation request multipart next part error", err)
-			// helpers.ManageError(w, err)
-			// return r
-			// TODO: devrait vérifier qu'on a un EOF mais ça ne fonctionne pas ?
-			break
-		}
-		if part.FormName() == "file" {
-			dto.File = part
-			dto.FileName = part.FileName()
-		} else if part.FormName() == "title" {
-			buf := new(bytes.Buffer)
-			buf.ReadFrom(part)
-			dto.Title = string(buf.Bytes())
-		} else if part.FormName() == "author" {
-			buf := new(bytes.Buffer)
-			buf.ReadFrom(part)
-			dto.Author = string(buf.Bytes())
-		}
+	dto := SubmitManuscriptRequestDto{
+		Title:  r.FormValue("title"),
+		Author: r.FormValue("author"),
+		File:   file,
 	}
 
 	slog.Info("receiving manuscript creation request", "body", dto)
@@ -101,6 +81,7 @@ func handleManuscriptCreation(w http.ResponseWriter, r *http.Request) *http.Requ
 	newManuscriptID := application.NewManuscriptID()
 	r = middlewares.SetManuscriptID(r, newManuscriptID)
 	app := middlewares.ApplicationFromRequest(r)
+
 	ctx, err := app.SendCommand(r.Context(), commands.SubmitManuscript{
 		Title:    dto.Title,
 		Author:   dto.Author,
@@ -121,7 +102,8 @@ func handleManuscriptCreation(w http.ResponseWriter, r *http.Request) *http.Requ
 }
 
 type ManuscriptDto struct {
-	Status string `json:"status"`
+	Status string  `json:"status"`
+	Url    url.URL `json:"url"`
 }
 
 func handleCancelManuscriptSubmission(w http.ResponseWriter, r *http.Request) *http.Request {
@@ -144,13 +126,13 @@ func handleManuscriptState(w http.ResponseWriter, r *http.Request) *http.Request
 	manuscriptID := middlewares.GetManuscriptID(r)
 	slog.Info("manuscript status request", "manuscript_id", manuscriptID.String())
 	app := middlewares.ApplicationFromRequest(r)
-	queryResult, err := app.Query(r.Context(), queries.ManuscriptStatus{})
+	queryResult, err := app.Query(r.Context(), queries.ManuscriptState{})
 	if err != nil {
 		slog.Error("manuscript status query error", err, "manuscript_id", manuscriptID.String())
 		helpers.ManageError(w, err)
 		return r
 	}
-	status, castedSuccessfuly := queryResult.(domain.ManuscriptStatus)
+	manuscript, castedSuccessfuly := queryResult.(domain.Manuscript)
 	if !castedSuccessfuly {
 		slog.Error("manuscript status query result casting error", err, "manuscript_id", manuscriptID.String())
 		helpers.ManageError(w, err)
@@ -158,7 +140,8 @@ func handleManuscriptState(w http.ResponseWriter, r *http.Request) *http.Request
 	}
 
 	helpers.WriteJson(w, ManuscriptDto{
-		Status: string(status),
+		Status: string(manuscript.Status),
+		Url:    manuscript.FileURL,
 	})
 	return r
 }
@@ -168,7 +151,7 @@ func handleManuscriptsFuncs(
 	usersHistory application.UsersHistory,
 	publicationsHistory application.PublicationsHistory,
 	manuscriptsHistory application.ManuscriptsHistory,
-	filesSaver commands.FilesSaver,
+	filesSaver ports.FilesSaver,
 ) {
 	routes := []router.Route{
 		{

@@ -7,6 +7,7 @@ import (
 
 	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"github.com/ThomasFerro/l-edition-libre/events"
+	"github.com/ThomasFerro/l-edition-libre/ports"
 )
 
 type SubmitManuscript struct {
@@ -14,11 +15,6 @@ type SubmitManuscript struct {
 	Author   string
 	File     io.Reader
 	FileName string
-}
-
-// TODO: Déplacer
-type FilesSaver interface {
-	Save(fileReader io.Reader, fileName string) (string, error)
 }
 
 type UnableToPersistFile struct {
@@ -36,8 +32,10 @@ func (commandError UnableToPersistFile) Name() string {
 
 func HandleSubmitManuscript(ctx context.Context, command Command) ([]events.Event, CommandError) {
 	submitManuscript := command.(SubmitManuscript)
-	filesSaver := contexts.FromContext[FilesSaver](ctx, contexts.FilesSaverContextKey{})
-	path, err := filesSaver.Save(submitManuscript.File, submitManuscript.FileName)
+
+	filesSaver := contexts.FromContext[ports.FilesSaver](ctx, contexts.FilesSaverContextKey{})
+
+	fileURL, err := filesSaver.Save(submitManuscript.File, submitManuscript.FileName)
 	if err != nil {
 		return nil, UnableToPersistFile{
 			FileName:   submitManuscript.FileName,
@@ -49,7 +47,7 @@ func HandleSubmitManuscript(ctx context.Context, command Command) ([]events.Even
 			Title:    submitManuscript.Title,
 			Author:   submitManuscript.Author,
 			FileName: submitManuscript.FileName,
-			FilePath: path,
+			FileURL:  fileURL,
 		},
 	}, nil
 }

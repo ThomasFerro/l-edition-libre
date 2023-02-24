@@ -63,7 +63,7 @@ func cancelManuscriptSubmission(ctx context.Context, manuscriptName string) (con
 	return ctx, nil
 }
 
-func getManuscriptStatus(ctx context.Context, manuscriptName string) (context.Context, api.ManuscriptDto, error) {
+func getManuscript(ctx context.Context, manuscriptName string) (context.Context, api.ManuscriptDto, error) {
 	ctx, manuscriptID := helpers.GetManuscriptID(ctx, manuscriptName)
 	url := fmt.Sprintf("http://localhost:8080/api/manuscripts/%v", manuscriptID.String())
 	var manuscript api.ManuscriptDto
@@ -79,7 +79,7 @@ func getManuscriptStatus(ctx context.Context, manuscriptName string) (context.Co
 }
 
 func manuscriptStatusShouldBe(ctx context.Context, manuscriptName string, expectedStatus domain.ManuscriptStatus) (context.Context, error) {
-	ctx, manuscript, err := getManuscriptStatus(ctx, manuscriptName)
+	ctx, manuscript, err := getManuscript(ctx, manuscriptName)
 	if err != nil {
 		return ctx, fmt.Errorf("cannot check manuscript's status: %v", err)
 	}
@@ -108,7 +108,7 @@ func isEventuallyPublished(ctx context.Context, manuscriptName string) (context.
 }
 
 func tryGetStatus(ctx context.Context, manuscriptName string) (context.Context, error) {
-	ctx, _, err := getManuscriptStatus(ctx, manuscriptName)
+	ctx, _, err := getManuscript(ctx, manuscriptName)
 	return ctx, err
 }
 

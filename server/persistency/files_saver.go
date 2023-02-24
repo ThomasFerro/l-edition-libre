@@ -1,31 +1,40 @@
 package persistency
 
 import (
+	"fmt"
 	"io"
-	"strings"
+	"net/url"
+	"os"
 
-	"github.com/ThomasFerro/l-edition-libre/commands"
+	"github.com/ThomasFerro/l-edition-libre/ports"
 	"github.com/google/uuid"
 )
 
-type inMemoryFilesSaver struct {
-	Files map[string]string
-}
+type localFilesSaver struct{}
 
-func (saver inMemoryFilesSaver) Save(fileReader io.Reader, fileName string) (string, error) {
+func (saver localFilesSaver) Save(fileReader io.Reader, fileName string) (url.URL, error) {
 	fileId := uuid.New()
-	builder := new(strings.Builder)
-	_, err := io.Copy(builder, fileReader)
+	dname, err := os.MkdirTemp("", "__test_files__")
 	if err != nil {
-		return "", err
+		return url.URL{}, err
 	}
-	saver.Files[fileId.String()] = builder.String()
 
-	return fileId.String(), nil
+	newFileName := fmt.Sprintf("%v/%v%v", dname, fileId.String(), fileName)
+	newFile, err := os.Create(newFileName)
+	defer newFile.Close()
+	if err != nil {
+		return url.URL{}, err
+	}
+	_, err = io.Copy(newFile, fileReader)
+	if err != nil {
+		return url.URL{}, err
+	}
+
+	newFileURL := fmt.Sprintf("file://%v", newFileName)
+	parsedURL, err := url.Parse(newFileURL)
+	return *parsedURL, err
 }
 
-func NewFilesSaver() commands.FilesSaver {
-	return inMemoryFilesSaver{
-		Files: map[string]string{},
-	}
+func NewFilesSaver() ports.FilesSaver {
+	return localFilesSaver{}
 }

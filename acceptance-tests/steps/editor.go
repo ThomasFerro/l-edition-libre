@@ -2,9 +2,14 @@ package steps
 
 import (
 	"acceptance-tests/helpers"
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
+	"os"
 
 	"github.com/ThomasFerro/l-edition-libre/api"
 	"github.com/cucumber/godog"
@@ -64,15 +69,35 @@ func theManuscriptsToBeReviewedAreTheFollowing(ctx context.Context, table *godog
 	return ctx, manuscriptsToReviewAreExpected(manuscriptsToReview.Manuscripts, expected)
 }
 
+func fetch(fileURL url.URL) (io.ReadCloser, error) {
+	if fileURL.Scheme != "file" {
+		return nil, errors.New("only files url are supported")
+	}
+
+	return os.Open(fileURL.Path)
+}
+
 func theManuscriptsForCanBeDownloadedForReview(ctx context.Context, manuscriptName string) (context.Context, error) {
-	ctx, manuscriptID := helpers.GetManuscriptID(ctx, manuscriptName)
-	url := fmt.Sprintf("http://localhost:8080/api/manuscripts/%v/file", manuscriptID.String())
-	ctx, err := helpers.Call(ctx, helpers.HttpRequest{
-		Url:    url,
-		Method: http.MethodGet,
-	})
+	ctx, manuscript, err := getManuscript(ctx, manuscriptName)
 	if err != nil {
-		return ctx, fmt.Errorf("unable to review manuscript: %v", err)
+		return ctx, err
+	}
+	manuscriptReader, err := fetch(manuscript.Url)
+	if err != nil {
+		return ctx, err
+	}
+	defer manuscriptReader.Close()
+	manuscriptFile, err := io.ReadAll(manuscriptReader)
+	if err != nil {
+		return ctx, err
+	}
+	testFile, err := os.ReadFile("./assets/test.pdf")
+	if err != nil {
+		return ctx, err
+	}
+
+	if bytes.Compare(manuscriptFile, testFile) != 0 {
+		return ctx, errors.New("files mismatch")
 	}
 	return ctx, nil
 }
