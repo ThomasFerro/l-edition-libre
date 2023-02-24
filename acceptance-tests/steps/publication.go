@@ -24,7 +24,11 @@ func isPublished(ctx context.Context, publicationID string) (context.Context, er
 func getPublicationStatus(ctx context.Context, publicationID string) (context.Context, api.PublicationDto, error) {
 	url := fmt.Sprintf("http://localhost:8080/api/publications/%v", publicationID)
 	var publication api.PublicationDto
-	ctx, err := helpers.Call(ctx, url, http.MethodGet, nil, &publication)
+	ctx, err := helpers.Call(ctx, helpers.HttpRequest{
+		Url:         url,
+		Method:      http.MethodGet,
+		ResponseDto: &publication,
+	})
 	if err != nil {
 		return ctx, api.PublicationDto{}, fmt.Errorf("unable to get publication's status: %v", err)
 	}

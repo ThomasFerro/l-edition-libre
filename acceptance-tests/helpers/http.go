@@ -7,7 +7,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/ThomasFerro/l-edition-libre/api/helpers"
 	"github.com/ThomasFerro/l-edition-libre/api/middlewares"
@@ -93,20 +97,15 @@ func addCustomHeaders(ctx context.Context, request *http.Request, headers map[st
 	}
 }
 
-func CallWithHeaders(ctx context.Context, url string, method string, headers map[string]string, body interface{}, responseDto interface{}) (context.Context, error) {
-	bodyReader, err := bodyToReader(body)
-	if err != nil {
-		return ctx, fmt.Errorf("unable to create a reader from the body: %v", err)
-	}
-	request, err := http.NewRequest(method, url, bodyReader)
-	if err != nil {
-		return ctx, fmt.Errorf("unable to create new http request: %v", err)
-	}
-	addUserHeader(ctx, request)
-	addCustomHeaders(ctx, request, headers)
-	if err != nil {
-		return ctx, fmt.Errorf("unable to add user http header: %v", err)
-	}
+type HttpRequest struct {
+	Url         string
+	Method      string
+	Headers     map[string]string
+	Body        interface{}
+	ResponseDto interface{}
+}
+
+func doCall(ctx context.Context, request *http.Request, responseDto interface{}) (context.Context, error) {
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		return ctx, fmt.Errorf("unable to send request: %v", err)
@@ -128,6 +127,58 @@ func CallWithHeaders(ctx context.Context, url string, method string, headers map
 
 	return ctx, nil
 }
-func Call(ctx context.Context, url string, method string, body interface{}, responseDto interface{}) (context.Context, error) {
-	return CallWithHeaders(ctx, url, method, nil, body, responseDto)
+
+func Call(ctx context.Context, httpRequest HttpRequest) (context.Context, error) {
+	bodyReader, err := bodyToReader(httpRequest.Body)
+	if err != nil {
+		return ctx, fmt.Errorf("unable to create a reader from the body: %v", err)
+	}
+	request, err := http.NewRequest(httpRequest.Method, httpRequest.Url, bodyReader)
+	if err != nil {
+		return ctx, fmt.Errorf("unable to create new http request: %v", err)
+	}
+	addUserHeader(ctx, request)
+	addCustomHeaders(ctx, request, httpRequest.Headers)
+	return doCall(ctx, request, httpRequest.ResponseDto)
+}
+
+func PostFile(ctx context.Context, url string, filePath string, otherData map[string]string, responseDto interface{}) (context.Context, error) {
+	file, err := os.Open(filePath)
+	defer file.Close()
+	if err != nil {
+		return ctx, err
+	}
+
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	defer writer.Close()
+
+	part, err := writer.CreateFormFile("file", filepath.Base(file.Name()))
+	if err != nil {
+		return ctx, err
+	}
+	_, err = io.Copy(part, file)
+	if err != nil {
+		return ctx, err
+	}
+
+	for dataKey, dataValue := range otherData {
+		formField, err := writer.CreateFormField(dataKey)
+		if err != nil {
+			return ctx, err
+		}
+		_, err = io.Copy(formField, strings.NewReader(dataValue))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	request, err := http.NewRequest(http.MethodPost, url, body)
+	if err != nil {
+		return ctx, err
+	}
+	request.Header.Add("Content-Type", writer.FormDataContentType())
+
+	addUserHeader(ctx, request)
+	return doCall(ctx, request, responseDto)
 }

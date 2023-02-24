@@ -13,8 +13,10 @@ import (
 func reviewPositivelyManuscript(ctx context.Context, manuscriptName string) (context.Context, error) {
 	ctx, manuscriptID := helpers.GetManuscriptID(ctx, manuscriptName)
 	url := fmt.Sprintf("http://localhost:8080/api/manuscripts/%v/review", manuscriptID.String())
-	// ctx, err := helpers.Call(ctx, url, http.MethodPost, api.ReviewManuscriptRequestDto{}, nil)
-	ctx, err := helpers.Call(ctx, url, http.MethodPost, nil, nil)
+	ctx, err := helpers.Call(ctx, helpers.HttpRequest{
+		Url:    url,
+		Method: http.MethodPost,
+	})
 	if err != nil {
 		return ctx, fmt.Errorf("unable to review manuscript: %v", err)
 	}
@@ -49,7 +51,11 @@ func manuscriptsToReviewAreExpected(actual, expected []api.ManuscriptToReviewDto
 func theManuscriptsToBeReviewedAreTheFollowing(ctx context.Context, table *godog.Table) (context.Context, error) {
 	url := fmt.Sprintf("http://localhost:8080/api/manuscripts/to-review")
 	var manuscriptsToReview api.ManuscriptsToReviewDto
-	ctx, err := helpers.Call(ctx, url, http.MethodGet, nil, &manuscriptsToReview)
+	ctx, err := helpers.Call(ctx, helpers.HttpRequest{
+		Url:         url,
+		Method:      http.MethodGet,
+		ResponseDto: &manuscriptsToReview,
+	})
 	if err != nil {
 		return ctx, fmt.Errorf("unable to get manuscripts to review: %v", err)
 	}
@@ -58,7 +64,21 @@ func theManuscriptsToBeReviewedAreTheFollowing(ctx context.Context, table *godog
 	return ctx, manuscriptsToReviewAreExpected(manuscriptsToReview.Manuscripts, expected)
 }
 
+func theManuscriptsForCanBeDownloadedForReview(ctx context.Context, manuscriptName string) (context.Context, error) {
+	ctx, manuscriptID := helpers.GetManuscriptID(ctx, manuscriptName)
+	url := fmt.Sprintf("http://localhost:8080/api/manuscripts/%v/file", manuscriptID.String())
+	ctx, err := helpers.Call(ctx, helpers.HttpRequest{
+		Url:    url,
+		Method: http.MethodGet,
+	})
+	if err != nil {
+		return ctx, fmt.Errorf("unable to review manuscript: %v", err)
+	}
+	return ctx, nil
+}
+
 func EditorSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I review positively the manuscript for "([^"]*)"$`, reviewPositivelyManuscript)
 	ctx.Step(`^the manuscripts to be reviewed are the following$`, theManuscriptsToBeReviewedAreTheFollowing)
+	ctx.Step(`^the manuscripts for "([^"]*)" can be downloaded for review$`, theManuscriptsForCanBeDownloadedForReview)
 }

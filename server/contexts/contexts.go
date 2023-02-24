@@ -16,6 +16,7 @@ type ContextualizedManuscriptsHistoryContextKey struct{}
 type ContextualizedManuscriptHistoryContextKey struct{}
 type PublicationsHistoryContextKey struct{}
 type ContextualizedPublicationHistoryContextKey struct{}
+type FilesSaverContextKey struct{}
 
 func FromContext[T any](ctx context.Context, key interface{}) T {
 	return ctx.Value(key).(T)

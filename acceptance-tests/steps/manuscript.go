@@ -31,10 +31,16 @@ func theWriterSubmittedAManuscript(ctx context.Context, writerName string, manus
 func sumbitManuscript(ctx context.Context, manuscriptName string) (context.Context, error) {
 	var newManuscript api.SubmitManuscriptResponseDto
 	ctx, authentifiedUserName := helpers.GetAuthentifiedUserName(ctx)
-	ctx, err := helpers.Call(ctx, "http://localhost:8080/api/manuscripts", http.MethodPost, api.SubmitManuscriptRequestDto{
-		Title:  manuscriptName,
-		Author: authentifiedUserName,
-	}, &newManuscript)
+	ctx, err := helpers.PostFile(
+		ctx,
+		"http://localhost:8080/api/manuscripts",
+		"./assets/test.pdf",
+		map[string]string{
+			"title":  manuscriptName,
+			"author": authentifiedUserName,
+		},
+		&newManuscript,
+	)
 	if err != nil {
 		return ctx, fmt.Errorf("unable to submit the manuscript: %v", err)
 	}
@@ -47,7 +53,10 @@ func cancelManuscriptSubmission(ctx context.Context, manuscriptName string) (con
 	ctx, manuscriptID := helpers.GetManuscriptID(ctx, manuscriptName)
 	url := fmt.Sprintf("http://localhost:8080/api/manuscripts/%v/cancel-submission", manuscriptID.String())
 
-	ctx, err := helpers.Call(ctx, url, http.MethodPost, nil, nil)
+	ctx, err := helpers.Call(ctx, helpers.HttpRequest{
+		Url:    url,
+		Method: http.MethodPost,
+	})
 	if err != nil {
 		return ctx, fmt.Errorf("unable to cancel manuscript submission: %v", err)
 	}
@@ -58,7 +67,11 @@ func getManuscriptStatus(ctx context.Context, manuscriptName string) (context.Co
 	ctx, manuscriptID := helpers.GetManuscriptID(ctx, manuscriptName)
 	url := fmt.Sprintf("http://localhost:8080/api/manuscripts/%v", manuscriptID.String())
 	var manuscript api.ManuscriptDto
-	ctx, err := helpers.Call(ctx, url, http.MethodGet, nil, &manuscript)
+	ctx, err := helpers.Call(ctx, helpers.HttpRequest{
+		Url:         url,
+		Method:      http.MethodGet,
+		ResponseDto: &manuscript,
+	})
 	if err != nil {
 		return ctx, api.ManuscriptDto{}, fmt.Errorf("unable to get manuscript's status: %v", err)
 	}
@@ -126,7 +139,11 @@ func writerManuscriptsAreExpected(actual, expected []api.WriterManuscriptDto) er
 func myManuscriptsAreTheFollowing(ctx context.Context, table *godog.Table) (context.Context, error) {
 	url := fmt.Sprintf("http://localhost:8080/api/manuscripts")
 	var writerManuscripts api.WriterManuscriptsDto
-	ctx, err := helpers.Call(ctx, url, http.MethodGet, nil, &writerManuscripts)
+	ctx, err := helpers.Call(ctx, helpers.HttpRequest{
+		Url:         url,
+		Method:      http.MethodGet,
+		ResponseDto: &writerManuscripts,
+	})
 	if err != nil {
 		return ctx, fmt.Errorf("unable to get writer manuscripts: %v", err)
 	}

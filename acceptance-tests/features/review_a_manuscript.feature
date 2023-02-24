@@ -13,6 +13,11 @@ Feature: Review a manusript
       | My first novel | First author   |
       | Another novel  | Another author |
 
+  Scenario: Open manuscript file
+    Given the writer "First author" submitted a manuscript for "My first novel"
+    When I authentify as an editor
+    Then the manuscripts for "My first novel" can be downloaded for review
+
   Scenario: Review a manuscript
     Given a writer submitted a manuscript for "My first novel"
     And I am an authentified editor
@@ -35,4 +40,4 @@ Feature: Review a manusript
     Then the error "ManuscriptNotFound" is thrown
 
 # TODO: ManuscriptNeedsRework ?
-# TODO: Ouvrir le document
+# TODO: Limitations du fichier (poids, extension)

@@ -16,7 +16,7 @@ type commandHandler func(context.Context, commands.Command) ([]events.Event, com
 type ManagedCommands = map[commandType]commandHandler
 
 type eventType string
-type eventHandler func(context.Context, events.Event) (context.Context, []events.Event, error)
+type eventHandler func(context.Context, events.Event) (context.Context, []events.Event, commands.CommandError)
 type ManagedEvents = map[eventType]eventHandler
 
 type queryType string
@@ -30,7 +30,6 @@ type Application struct {
 }
 
 func (app Application) applyEventsHandlers(ctx context.Context, commandEvent events.Event) (context.Context, []events.Event, error) {
-	// TODO: Recursive
 	eventType := eventType(fmt.Sprintf("%T", commandEvent))
 	if eventHandler, found := app.managedEvents[eventType]; found {
 		return eventHandler(ctx, commandEvent)

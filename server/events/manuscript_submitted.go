@@ -3,8 +3,10 @@ package events
 import "fmt"
 
 type ManuscriptSubmitted struct {
-	Title  string
-	Author string
+	Title    string
+	Author   string
+	FileName string
+	FilePath string
 }
 
 func (event ManuscriptSubmitted) String() string {

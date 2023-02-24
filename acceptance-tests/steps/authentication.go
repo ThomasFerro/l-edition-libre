@@ -28,20 +28,25 @@ func authentifyAsEditor(ctx context.Context) (context.Context, error) {
 	}
 	headers := make(map[string]string, 0)
 	headers[middlewares.ApiKeyHeader] = configuration.GetConfiguration(configuration.ADMIN_API_KEY)
-	return helpers.CallWithHeaders(
+	return helpers.Call(
 		ctx,
-		"http://localhost:8080/api/users/promote-to-editor",
-		http.MethodPost,
-		headers,
-		nil,
-		nil)
+		helpers.HttpRequest{
+			Url:     "http://localhost:8080/api/users/promote-to-editor",
+			Method:  http.MethodPost,
+			Headers: headers,
+		})
 }
 
 func authentifyAs(ctx context.Context, displayedName string) (context.Context, error) {
 	var newUser api.CreateAccountResponseDto
-	ctx, err := helpers.Call(ctx, "http://localhost:8080/api/users", http.MethodPost, api.CreateAccountRequestDto{
-		DisplayedName: displayedName,
-	}, &newUser)
+	ctx, err := helpers.Call(ctx, helpers.HttpRequest{
+		Url:    "http://localhost:8080/api/users",
+		Method: http.MethodPost,
+		Body: api.CreateAccountRequestDto{
+			DisplayedName: displayedName,
+		},
+		ResponseDto: &newUser,
+	})
 	if err != nil {
 		return ctx, fmt.Errorf("unable to create a new account: %v", err)
 	}

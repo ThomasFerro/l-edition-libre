@@ -47,5 +47,3 @@ Feature: Submit a manusript
     And I am authentified as another writer
     When I cancel the submission of "My first novel"
     Then the error "ManuscriptNotFound" is thrown
-
-# TODO: Véritablement téléverser un document (vérifier qu'on l'a bien persisté en le récupérant ?)

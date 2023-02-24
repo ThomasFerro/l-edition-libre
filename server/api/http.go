@@ -33,10 +33,11 @@ func Start() {
 	manuscriptsHistory := persistency.NewManuscriptsHistory()
 	publicationsHistory := persistency.NewPublicationsHistory()
 	usersHistory := persistency.NewUsersHistory()
+	filesSaver := persistency.NewFilesSaver()
 	app := application.NewApplication(managedCommands, managedEvents, managedQueries)
 	slog.Info("setup HTTP API")
 
-	handleManuscriptsFuncs(app, usersHistory, publicationsHistory, manuscriptsHistory)
+	handleManuscriptsFuncs(app, usersHistory, publicationsHistory, manuscriptsHistory, filesSaver)
 	handlePublicationsFuncs(app, publicationsHistory)
 	handleUsersFuncs(app, usersHistory)
 

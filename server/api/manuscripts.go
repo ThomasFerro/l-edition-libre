@@ -1,7 +1,8 @@
 package api
 
 import (
-	"encoding/json"
+	"bytes"
+	"io"
 	"net/http"
 
 	"github.com/ThomasFerro/l-edition-libre/api/helpers"
@@ -51,8 +52,10 @@ func handleGetManuscripts(w http.ResponseWriter, r *http.Request) *http.Request 
 }
 
 type SubmitManuscriptRequestDto struct {
-	Title  string `json:"title"`
-	Author string `json:"author"`
+	Title    string
+	Author   string
+	File     io.Reader
+	FileName string
 }
 
 type SubmitManuscriptResponseDto struct {
@@ -60,22 +63,49 @@ type SubmitManuscriptResponseDto struct {
 }
 
 func handleManuscriptCreation(w http.ResponseWriter, r *http.Request) *http.Request {
-	decoder := json.NewDecoder(r.Body)
-	var dto SubmitManuscriptRequestDto
-	err := decoder.Decode(&dto)
-	slog.Info("receiving manuscript creation request", "body", dto)
+	dto := SubmitManuscriptRequestDto{}
+	multipartReader, err := r.MultipartReader()
 	if err != nil {
-		slog.Error("manuscript creation request dto decoding error", err)
+		slog.Error("manuscript creation request multipart reader error", err)
 		helpers.ManageError(w, err)
 		return r
 	}
+	for {
+		part, err := multipartReader.NextPart()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			// slog.Error("manuscript creation request multipart next part error", err)
+			// helpers.ManageError(w, err)
+			// return r
+			// TODO: devrait vérifier qu'on a un EOF mais ça ne fonctionne pas ?
+			break
+		}
+		if part.FormName() == "file" {
+			dto.File = part
+			dto.FileName = part.FileName()
+		} else if part.FormName() == "title" {
+			buf := new(bytes.Buffer)
+			buf.ReadFrom(part)
+			dto.Title = string(buf.Bytes())
+		} else if part.FormName() == "author" {
+			buf := new(bytes.Buffer)
+			buf.ReadFrom(part)
+			dto.Author = string(buf.Bytes())
+		}
+	}
+
+	slog.Info("receiving manuscript creation request", "body", dto)
 
 	newManuscriptID := application.NewManuscriptID()
 	r = middlewares.SetManuscriptID(r, newManuscriptID)
 	app := middlewares.ApplicationFromRequest(r)
 	ctx, err := app.SendCommand(r.Context(), commands.SubmitManuscript{
-		Title:  dto.Title,
-		Author: dto.Author,
+		Title:    dto.Title,
+		Author:   dto.Author,
+		File:     dto.File,
+		FileName: dto.FileName,
 	})
 	if err != nil {
 		slog.Error("manuscript creation request error", err)
@@ -96,7 +126,6 @@ type ManuscriptDto struct {
 
 func handleCancelManuscriptSubmission(w http.ResponseWriter, r *http.Request) *http.Request {
 	manuscriptID := r.Context().Value(contexts.ManuscriptIDContextKey{}).(application.ManuscriptID)
-	// TODO: slog avec le context pour ne pas avoir à remettre les params chaque fois ?
 	slog.Info("manuscript submission cancelling request", "manuscript_id", manuscriptID.String())
 	app := middlewares.ApplicationFromRequest(r)
 	ctx, err := app.SendCommand(r.Context(), commands.CancelManuscriptSubmission{})
@@ -134,7 +163,13 @@ func handleManuscriptState(w http.ResponseWriter, r *http.Request) *http.Request
 	return r
 }
 
-func handleManuscriptsFuncs(app application.Application, usersHistory application.UsersHistory, publicationsHistory application.PublicationsHistory, manuscriptsHistory application.ManuscriptsHistory) {
+func handleManuscriptsFuncs(
+	app application.Application,
+	usersHistory application.UsersHistory,
+	publicationsHistory application.PublicationsHistory,
+	manuscriptsHistory application.ManuscriptsHistory,
+	filesSaver commands.FilesSaver,
+) {
 	routes := []router.Route{
 		{
 			Path:   "/api/manuscripts",
@@ -143,6 +178,7 @@ func handleManuscriptsFuncs(app application.Application, usersHistory applicatio
 				middlewares.PersistNewEvents,
 				middlewares.InjectContextualizedManuscriptsHistory,
 				middlewares.ExtractUserID,
+				middlewares.InjectFilesSaver(filesSaver),
 				middlewares.InjectManuscriptsHistory(manuscriptsHistory),
 				middlewares.InjectUsersHistory(usersHistory),
 				middlewares.InjectApplication(app),
