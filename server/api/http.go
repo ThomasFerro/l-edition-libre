@@ -7,7 +7,8 @@ import (
 	"github.com/ThomasFerro/l-edition-libre/application"
 	"github.com/ThomasFerro/l-edition-libre/commands"
 	"github.com/ThomasFerro/l-edition-libre/configuration"
-	"github.com/ThomasFerro/l-edition-libre/persistency"
+	"github.com/ThomasFerro/l-edition-libre/persistency/inmemory"
+	"github.com/ThomasFerro/l-edition-libre/persistency/mongodb"
 	"github.com/ThomasFerro/l-edition-libre/queries"
 	"golang.org/x/exp/slog"
 )
@@ -30,10 +31,16 @@ func Start() {
 		"queries.ManuscriptsToReview": queries.HandleManuscriptsToReview,
 		"queries.PublicationStatus":   queries.HandlePublicationStatus,
 	}
-	manuscriptsHistory := persistency.NewManuscriptsHistory()
-	publicationsHistory := persistency.NewPublicationsHistory()
-	usersHistory := persistency.NewUsersHistory()
-	filesSaver := persistency.NewFilesSaver()
+	manuscriptsHistory := inmemory.NewManuscriptsHistory()
+	publicationsHistory := inmemory.NewPublicationsHistory()
+	filesSaver := inmemory.NewFilesSaver()
+
+	client, err := mongodb.GetClient()
+	if err != nil {
+		return
+	}
+	usersHistory := mongodb.NewUsersHistory(client)
+
 	app := application.NewApplication(managedCommands, managedEvents, managedQueries)
 	slog.Info("setup HTTP API")
 

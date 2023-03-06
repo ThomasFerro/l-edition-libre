@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"github.com/ThomasFerro/l-edition-libre/events"
@@ -32,7 +33,15 @@ func NewUserID() UserID {
 }
 
 func IsAnEditor(ctx context.Context) (bool, error) {
-	history := contexts.FromContextOrDefault(ctx, contexts.ContextualizedUserHistoryContextKey{}, []ContextualizedEvent{})
+	getHistory := contexts.FromContextOrDefault(ctx, contexts.ContextualizedUserHistoryContextKey{}, func(c context.Context) ([]ContextualizedEvent, error) {
+		return []ContextualizedEvent{}, nil
+	})
+	history, err := getHistory(ctx)
+
+	fmt.Printf("\n\n\n err %v \n history %v \n\n\n\n", err, history)
+	if err != nil {
+		return false, err
+	}
 	for _, nextEvent := range history {
 		_, isAUserEditorEvent := nextEvent.Event().(events.UserPromotedToEditor)
 		if isAUserEditorEvent {

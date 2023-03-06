@@ -16,7 +16,6 @@ import (
 	"github.com/ThomasFerro/l-edition-libre/api/helpers"
 	"github.com/ThomasFerro/l-edition-libre/api/middlewares"
 	"github.com/ThomasFerro/l-edition-libre/application"
-	"github.com/cucumber/messages-go/v16"
 )
 
 func bodyToReader(body interface{}) (io.Reader, error) {
@@ -30,28 +29,13 @@ func bodyToReader(body interface{}) (io.Reader, error) {
 	return bytes.NewReader(marshalled), nil
 }
 
-func isAnErrorHandlingScenario(tags []*messages.PickleTag) bool {
-	for _, nextTag := range tags {
-		if nextTag.Name == "@Error" {
-			return true
-		}
-	}
-	return false
-}
-
 func handleHttpError(ctx context.Context, response *http.Response) (context.Context, bool, error) {
 	if response.StatusCode >= 400 {
-		tags, ok := ctx.Value(TagsKey{}).([]*messages.PickleTag)
-		if !ok {
-			return ctx, false, fmt.Errorf("unable to get scenario tags")
+		body, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			return ctx, false, fmt.Errorf("body read error: %v", err)
 		}
-
-		if isAnErrorHandlingScenario(tags) {
-			body, err := ioutil.ReadAll(response.Body)
-			if err != nil {
-				return ctx, false, fmt.Errorf("body read error: %v", err)
-			}
-
+		if isAnErrorHandlingScenario(ctx) {
 			var httpErrorMessage helpers.HttpErrorMessage
 			err = json.Unmarshal(body, &httpErrorMessage)
 			if err != nil {
@@ -59,7 +43,7 @@ func handleHttpError(ctx context.Context, response *http.Response) (context.Cont
 			}
 			return context.WithValue(ctx, ErrorKey{}, httpErrorMessage.Error), true, nil
 		}
-		return ctx, false, fmt.Errorf("wrong response code: %v", response.StatusCode)
+		return ctx, false, fmt.Errorf("wrong response code: %v (%v)", response.StatusCode, string(body))
 	}
 	return ctx, false, nil
 }

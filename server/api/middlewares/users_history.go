@@ -2,9 +2,9 @@ package middlewares
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
-	"github.com/ThomasFerro/l-edition-libre/api/helpers"
 	"github.com/ThomasFerro/l-edition-libre/application"
 	"github.com/ThomasFerro/l-edition-libre/contexts"
 )
@@ -21,17 +21,22 @@ func InjectUsersHistory(usersHistory application.UsersHistory) Middleware {
 func InjectContextualizedUserHistory(next HandlerFuncReturningRequest) HandlerFuncReturningRequest {
 	return func(w http.ResponseWriter, r *http.Request) *http.Request {
 		usersHistory := usersHistoryFromContext(r.Context())
+
 		userID, found := TryGetUserIdFromRequest(r)
+
 		if !found {
-			r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedUserHistoryContextKey{}, []application.ContextualizedEvent{}))
+			r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedUserHistoryContextKey{}, func(ctx context.Context) ([]application.ContextualizedEvent, error) {
+				return nil, errors.New("user not found")
+			}))
 			return next(w, r)
 		}
-		userhistory, err := usersHistory.For(userID)
-		if err != nil {
-			helpers.ManageError(w, err)
-			return r
+
+		getUserHistory := func(ctx context.Context) ([]application.ContextualizedEvent, error) {
+			return usersHistory.For(userID)
 		}
-		r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedUserHistoryContextKey{}, userhistory))
+
+		r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedUserHistoryContextKey{}, getUserHistory))
+
 		return next(w, r)
 	}
 }
