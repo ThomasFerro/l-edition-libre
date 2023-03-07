@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"github.com/ThomasFerro/l-edition-libre/events"
@@ -38,7 +37,6 @@ func IsAnEditor(ctx context.Context) (bool, error) {
 	})
 	history, err := getHistory(ctx)
 
-	fmt.Printf("\n\n\n err %v \n history %v \n\n\n\n", err, history)
 	if err != nil {
 		return false, err
 	}

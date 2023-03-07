@@ -10,11 +10,19 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-func GetClient() (*mongo.Client, error) {
-	slog.Info("connecting to mongodb")
+type DatabaseClient struct {
+	MongoClient  *mongo.Client
+	databaseName string
+}
+
+// TODO: Exposer et utiliser une méthode pour fermer le client
+
+func GetClient(databaseName string) (*DatabaseClient, error) {
+	// TODO: Un seul client ? Un pool ? Qui s'occupe de les lancer / les couper ?
+	slog.Info("connecting to mongodb", "databaseName", databaseName)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(configuration.GetConfiguration(configuration.MONGO_CONNECTION_STRING)))
+	mongoClient, err := mongo.Connect(ctx, options.Client().ApplyURI(configuration.GetConfiguration(configuration.MONGO_CONNECTION_STRING)))
 	if err != nil {
 		slog.Error("cannot connect to mongodb", err)
 		return nil, err
@@ -25,34 +33,17 @@ func GetClient() (*mongo.Client, error) {
 	// 		panic(err)
 	// 	}
 	// }()
-	return client, err
+	return &DatabaseClient{
+		mongoClient,
+		databaseName,
+	}, err
 }
 
 // TODO: Migration as code pour créer les collections (exposer sur un /init)
-var database = configuration.GetConfiguration(configuration.MONGO_DATABASE_NAME)
-
-func Collection(client *mongo.Client, collection string) *mongo.Collection {
-	return client.Database(database).Collection(collection)
+func Collection(client *DatabaseClient, collection string) *mongo.Collection {
+	return client.MongoClient.Database(client.databaseName).Collection(collection)
 }
 
-/*
-Manuscripts:
-
-StreamID => ManuscriptID
-Creator => UserID
-
-Users:
-
-StreamID => UserID
-Creator => UserID
-
-Publications:
-
-StreamID => PublicationID
-
-
-Une seule table Events
-*/
 /*
 TODO: Heathcheck via
 Calling Connect does not block for server discovery. If you wish to know if a MongoDB server has been found and connected to, use the Ping method:

@@ -13,7 +13,7 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-func Start() {
+func Start(databaseName string) {
 	slog.Info("start new application")
 	managedCommands := application.ManagedCommands{
 		"commands.CreateAccount":              commands.HandleCreateAccount,
@@ -31,15 +31,15 @@ func Start() {
 		"queries.ManuscriptsToReview": queries.HandleManuscriptsToReview,
 		"queries.PublicationStatus":   queries.HandlePublicationStatus,
 	}
-	manuscriptsHistory := inmemory.NewManuscriptsHistory()
-	publicationsHistory := inmemory.NewPublicationsHistory()
 	filesSaver := inmemory.NewFilesSaver()
 
-	client, err := mongodb.GetClient()
+	client, err := mongodb.GetClient(databaseName)
 	if err != nil {
 		return
 	}
 	usersHistory := mongodb.NewUsersHistory(client)
+	publicationsHistory := mongodb.NewPublicationsHistory(client)
+	manuscriptsHistory := mongodb.NewManuscriptsHistory(client)
 
 	app := application.NewApplication(managedCommands, managedEvents, managedQueries)
 	slog.Info("setup HTTP API")

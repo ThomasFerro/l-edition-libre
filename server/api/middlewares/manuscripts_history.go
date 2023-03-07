@@ -2,7 +2,6 @@ package middlewares
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/ThomasFerro/l-edition-libre/api/helpers"
@@ -41,7 +40,6 @@ func manuscriptsHistoryFromContext(ctx context.Context) application.ManuscriptsH
 
 func manuscriptsHistory(ctx context.Context) (map[application.ManuscriptID][]application.ContextualizedEvent, error) {
 	isEditor, err := application.IsAnEditor(ctx)
-	fmt.Printf("\n\n\n isEditor %v \n\n\n\n", isEditor)
 	if err != nil {
 		return nil, err
 	}

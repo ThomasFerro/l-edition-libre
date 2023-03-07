@@ -10,14 +10,13 @@ import (
 	"github.com/ThomasFerro/l-edition-libre/events"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type UsersHistory struct {
-	client *mongo.Client
+	client *DatabaseClient
 }
 
-const userEventsCollectionName = "users_events"
+const usersEventsCollectionName = "users_events"
 
 type UserEvent struct {
 	UserId    string `bson:"userId"`
@@ -28,7 +27,7 @@ func (history UsersHistory) For(userID application.UserID) ([]application.Contex
 	// TODO: Passer le context ?
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	cur, err := Collection(history.client, userEventsCollectionName).Find(ctx, bson.D{primitive.E{Key: "userId", Value: userID.String()}})
+	cur, err := Collection(history.client, usersEventsCollectionName).Find(ctx, bson.D{primitive.E{Key: "userId", Value: userID.String()}})
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +69,7 @@ func toUserEvent(nextDecodedEvent UserEvent) (events.Event, error) {
 
 func (history UsersHistory) Append(ctx context.Context, newEvents []application.ContextualizedEvent) error {
 	userID := ctx.Value(contexts.UserIDContextKey{}).(application.UserID)
-	collection := Collection(history.client, userEventsCollectionName)
+	collection := Collection(history.client, usersEventsCollectionName)
 	mongoctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -88,7 +87,7 @@ func (history UsersHistory) Append(ctx context.Context, newEvents []application.
 	return nil
 }
 
-func NewUsersHistory(client *mongo.Client) application.UsersHistory {
+func NewUsersHistory(client *DatabaseClient) application.UsersHistory {
 	return UsersHistory{
 		client,
 	}

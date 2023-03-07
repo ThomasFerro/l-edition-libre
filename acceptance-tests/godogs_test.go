@@ -9,10 +9,12 @@ import (
 
 	"github.com/ThomasFerro/l-edition-libre/api"
 	"github.com/cucumber/godog"
+	"github.com/google/uuid"
 )
 
 func InitializeTestSuite(*godog.TestSuiteContext) {
-	go api.Start()
+	databaseName := fmt.Sprintf("l-edition-libre-acceptance-%v", uuid.New().String())
+	go api.Start(databaseName)
 }
 
 func InitializeScenario(ctx *godog.ScenarioContext) {
