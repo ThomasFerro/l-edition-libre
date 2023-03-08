@@ -3,7 +3,6 @@ package mongodb
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/ThomasFerro/l-edition-libre/application"
 	"github.com/ThomasFerro/l-edition-libre/contexts"
@@ -13,7 +12,7 @@ import (
 )
 
 type PublicationsHistory struct {
-	client *DatabaseClient
+	history EventsHistory[string, PublicationEvent]
 }
 
 const publicationsEventsCollectionName = "publications_events"
@@ -24,38 +23,33 @@ type PublicationEvent struct {
 	EventType     string `bson:"eventType"`
 }
 
-func (history PublicationsHistory) For(publicationID application.PublicationID) ([]application.ContextualizedEvent, error) {
-	// TODO: Passer le context ?
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	cur, err := Collection(history.client, publicationsEventsCollectionName).Find(ctx, bson.D{primitive.E{Key: "publicationId", Value: publicationID.String()}})
+func (event PublicationEvent) StreamID() (string, error) {
+	return event.PublicationID, nil
+}
+
+func (publications PublicationsHistory) For(publicationID application.PublicationID) ([]application.ContextualizedEvent, error) {
+	events, err := publications.history.ForSingleStream(publicationID.String(), bson.D{primitive.E{Key: "publicationId", Value: publicationID.String()}})
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
-	results := []application.ContextualizedEvent{}
-	for cur.Next(ctx) {
-		var nextDecodedEvent PublicationEvent
-		err := cur.Decode(&nextDecodedEvent)
-		if err != nil {
-			return nil, err
-		}
-		publicationEvent, err := toPublicationEvent(nextDecodedEvent)
+
+	contextualizedEvents := []application.ContextualizedEvent{}
+
+	for _, nextEvent := range events {
+		publicationEvent, err := toPublicationEvent(nextEvent)
 		if err != nil {
 			return nil, err
 		}
 		// TODO: Ne pas passer par des contextualized
-		results = append(results, application.ContextualizedEvent{
+		contextualizedEvents = append(contextualizedEvents, application.ContextualizedEvent{
 			OriginalEvent: publicationEvent,
 			Context: application.EventContext{
-				UserID: application.MustParseUserID(nextDecodedEvent.UserID),
+				UserID: application.MustParseUserID(nextEvent.UserID),
 			},
 		})
 	}
-	if err := cur.Err(); err != nil {
-		return nil, err
-	}
-	return results, nil
+
+	return contextualizedEvents, nil
 }
 
 func toPublicationEvent(nextDecodedEvent PublicationEvent) (events.Event, error) {
@@ -66,14 +60,11 @@ func toPublicationEvent(nextDecodedEvent PublicationEvent) (events.Event, error)
 	return nil, fmt.Errorf("unmanaged publication event %v", nextDecodedEvent.EventType)
 }
 
-func (history PublicationsHistory) Append(ctx context.Context, newEvents []application.ContextualizedEvent) error {
+func (publications PublicationsHistory) Append(ctx context.Context, newEvents []application.ContextualizedEvent) error {
 	userID := ctx.Value(contexts.UserIDContextKey{}).(application.UserID)
 	publicationID := ctx.Value(contexts.PublicationIDContextKey{}).(application.PublicationID)
-	collection := Collection(history.client, publicationsEventsCollectionName)
-	mongoctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 
-	documentsToInsert := []interface{}{}
+	documentsToInsert := []PublicationEvent{}
 	for _, newEvent := range newEvents {
 		documentsToInsert = append(documentsToInsert, PublicationEvent{
 			UserID:        userID.String(),
@@ -81,15 +72,11 @@ func (history PublicationsHistory) Append(ctx context.Context, newEvents []appli
 			EventType:     newEvent.OriginalEvent.(events.PublicationEvent).PublicationEventName(),
 		})
 	}
-	_, err := collection.InsertMany(mongoctx, documentsToInsert)
-	if err != nil {
-		return err
-	}
-	return nil
+	return publications.history.Append(documentsToInsert)
 }
 
 func NewPublicationsHistory(client *DatabaseClient) application.PublicationsHistory {
 	return PublicationsHistory{
-		client,
+		history: NewHistory[string, PublicationEvent](client, publicationsEventsCollectionName),
 	}
 }

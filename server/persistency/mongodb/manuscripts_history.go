@@ -27,49 +27,39 @@ type ManuscriptEvent struct {
 	EventPayload string `bson:"eventPayload"`
 }
 
-// TODO: Mutualiser ce helper
-// TODO: Ranger par ordre de date => l'ordre est important = on ne peut plus passer par une map ?
-func (history ManuscriptsHistory) find(query bson.D) (map[application.ManuscriptID][]application.ContextualizedEvent, error) {
-	// TODO: Passer le context ?
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	cur, err := Collection(history.client, manuscriptsEventsCollectionName).Find(ctx, query)
+func manuscriptEventMapper(manuscriptEvent ManuscriptEvent) (application.ContextualizedEvent, error) {
+	manuscriptID, err := application.ParseManuscriptID(manuscriptEvent.ManuscriptID)
 	if err != nil {
-		return nil, err
+		return application.ContextualizedEvent{}, err
 	}
-	defer cur.Close(ctx)
-	results := map[application.ManuscriptID][]application.ContextualizedEvent{}
-	for cur.Next(ctx) {
-		var nextDecodedEvent ManuscriptEvent
-		err := cur.Decode(&nextDecodedEvent)
-		if err != nil {
-			return nil, err
-		}
-		manuscriptEvent, err := toManuscriptEvent(nextDecodedEvent)
-		if err != nil {
-			return nil, err
-		}
-		manuscriptID := application.MustParseManuscriptID(nextDecodedEvent.ManuscriptID)
-		if _, exists := results[manuscriptID]; !exists {
-			results[manuscriptID] = []application.ContextualizedEvent{}
-		}
-		// TODO: Ne pas passer par des contextualized
-		results[manuscriptID] = append(results[manuscriptID], application.ContextualizedEvent{
-			OriginalEvent: manuscriptEvent,
-			Context: application.EventContext{
-				UserID: application.MustParseUserID(nextDecodedEvent.UserID),
-			},
-			ManuscriptID: manuscriptID,
-		})
+	userID, err := application.ParseUserID(manuscriptEvent.UserID)
+	if err != nil {
+		return application.ContextualizedEvent{}, err
 	}
-	if err := cur.Err(); err != nil {
-		return nil, err
+	originalEvent, err := toManuscriptEvent(manuscriptEvent)
+	if err != nil {
+		return application.ContextualizedEvent{}, err
 	}
-	return results, nil
+	return application.ContextualizedEvent{
+		OriginalEvent: originalEvent,
+		Context: application.EventContext{
+			UserID: userID,
+		},
+		ManuscriptID: manuscriptID,
+	}, nil
+}
+
+func manuscriptToStreamKey(manuscriptEvent ManuscriptEvent) application.ManuscriptID {
+	return application.MustParseManuscriptID(manuscriptEvent.ManuscriptID)
+}
+
+func (history ManuscriptsHistory) findManuscripts(query bson.D) (map[application.ManuscriptID][]application.ContextualizedEvent, error) {
+	return find(history.client, query, manuscriptEventMapper, manuscriptToStreamKey)
 }
 
 func (history ManuscriptsHistory) For(manuscriptID application.ManuscriptID) ([]application.ContextualizedEvent, error) {
-	results, err := history.find(bson.D{primitive.E{Key: "manuscriptId", Value: manuscriptID.String()}})
+	query := bson.D{primitive.E{Key: "manuscriptId", Value: manuscriptID.String()}}
+	results, err := history.findManuscripts(query)
 	if err != nil {
 		return nil, err
 	}
@@ -77,11 +67,11 @@ func (history ManuscriptsHistory) For(manuscriptID application.ManuscriptID) ([]
 }
 
 func (history ManuscriptsHistory) ForAll() (map[application.ManuscriptID][]application.ContextualizedEvent, error) {
-	return history.find(bson.D{})
+	return history.findManuscripts(bson.D{})
 }
 
 func (history ManuscriptsHistory) ForAllOfUser(userID application.UserID) (map[application.ManuscriptID][]application.ContextualizedEvent, error) {
-	return history.find(bson.D{primitive.E{Key: "userId", Value: userID.String()}})
+	return history.findManuscripts(bson.D{primitive.E{Key: "userId", Value: userID.String()}})
 }
 
 func toManuscriptEvent(nextDecodedEvent ManuscriptEvent) (events.Event, error) {
