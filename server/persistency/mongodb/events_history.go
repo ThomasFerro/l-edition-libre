@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ThomasFerro/l-edition-libre/utils"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type PersistedEvent[StreamID comparable] interface {
@@ -16,12 +18,18 @@ type EventsHistory[StreamID comparable, Event PersistedEvent[StreamID]] interfac
 	Client() *DatabaseClient
 	Append([]Event) error
 	ForSingleStream(StreamID, bson.D) ([]Event, error)
-	ForMultipleStreams(bson.D) (map[StreamID][]Event, error)
+	ForMultipleStreams(bson.D) (utils.OrderedMap[StreamID, []Event], error)
 }
 
 type GenericEventsHistory[StreamID comparable, Event PersistedEvent[StreamID]] struct {
 	client     *DatabaseClient
 	collection string
+}
+
+type InsertedDocument[StreamID comparable, Event PersistedEvent[StreamID]] struct {
+	EmittedOn string   `bson:"emittedOn"`
+	Event     Event    `bson:"event"`
+	StreamID  StreamID `bson:"streamId"`
 }
 
 func (history GenericEventsHistory[StreamID, PersistedEvent]) Client() *DatabaseClient {
@@ -34,7 +42,16 @@ func (history GenericEventsHistory[StreamID, PersistedEvent]) Append(newEvents [
 
 	documentsToInsert := []interface{}{}
 	for _, newEvent := range newEvents {
-		documentsToInsert = append(documentsToInsert, newEvent)
+		streamID, err := newEvent.StreamID()
+		if err != nil {
+			return err
+		}
+		eventToInsert := InsertedDocument[StreamID, PersistedEvent]{
+			EmittedOn: time.Now().UTC().String(),
+			StreamID:  streamID,
+			Event:     newEvent,
+		}
+		documentsToInsert = append(documentsToInsert, eventToInsert)
 	}
 	_, err := collection.InsertMany(mongoctx, documentsToInsert)
 	if err != nil {
@@ -49,42 +66,49 @@ func (history GenericEventsHistory[StreamID, PersistedEvent]) ForSingleStream(st
 		return nil, err
 	}
 
-	for nextStreamID := range multipleStreams {
+	for _, keyValue := range multipleStreams.Map() {
+		nextStreamID := keyValue.Key
 		if nextStreamID != streamID {
 			return nil, fmt.Errorf("unexpected stream id %v", nextStreamID)
 		}
 	}
 
-	return multipleStreams[streamID], nil
+	return multipleStreams.Of(streamID), nil
 }
 
-func (history GenericEventsHistory[StreamID, PersistedEvent]) ForMultipleStreams(query bson.D) (map[StreamID][]PersistedEvent, error) {
+func (history GenericEventsHistory[StreamID, PersistedEvent]) ForMultipleStreams(query bson.D) (utils.OrderedMap[StreamID, []PersistedEvent], error) {
 	// TODO: Passer le context ?
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	cur, err := Collection(history.client, manuscriptsEventsCollectionName).Find(ctx, query)
+	findQuery := bson.D{}
+	for _, v := range query {
+		findQuery = append(findQuery, primitive.E{Key: fmt.Sprintf("event.%v", v.Key), Value: v.Value})
+	}
+	cur, err := Collection(history.client, history.collection).Find(ctx, findQuery)
 	if err != nil {
-		return nil, err
+		return utils.OrderedMap[StreamID, []PersistedEvent]{}, err
 	}
 	defer cur.Close(ctx)
-	results := map[StreamID][]PersistedEvent{}
+	results := utils.OrderedMap[StreamID, []PersistedEvent]{}
 	for cur.Next(ctx) {
-		var nextDecodedEvent PersistedEvent
-		err := cur.Decode(&nextDecodedEvent)
+		var nextDocument InsertedDocument[StreamID, PersistedEvent]
+		err := cur.Decode(&nextDocument)
 		if err != nil {
-			return nil, err
+			return utils.OrderedMap[StreamID, []PersistedEvent]{}, err
 		}
-		streamKey, err := nextDecodedEvent.StreamID()
+		streamKey := nextDocument.StreamID
 		if err != nil {
-			return nil, err
+			return utils.OrderedMap[StreamID, []PersistedEvent]{}, err
 		}
-		if _, exists := results[streamKey]; !exists {
-			results[streamKey] = []PersistedEvent{}
+
+		persistedEvents := []PersistedEvent{}
+		if results.HasKey(streamKey) {
+			persistedEvents = results.Of(streamKey)
 		}
-		results[streamKey] = append(results[streamKey], nextDecodedEvent)
+		results = results.Upsert(streamKey, append(persistedEvents, nextDocument.Event))
 	}
 	if err := cur.Err(); err != nil {
-		return nil, err
+		return utils.OrderedMap[StreamID, []PersistedEvent]{}, err
 	}
 	return results, nil
 }

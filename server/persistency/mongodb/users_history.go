@@ -3,7 +3,6 @@ package mongodb
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/ThomasFerro/l-edition-libre/application"
 	"github.com/ThomasFerro/l-edition-libre/contexts"
@@ -13,7 +12,8 @@ import (
 )
 
 type UsersHistory struct {
-	client *DatabaseClient
+	client  *DatabaseClient
+	history EventsHistory[string, UserEvent]
 }
 
 const usersEventsCollectionName = "users_events"
@@ -23,38 +23,31 @@ type UserEvent struct {
 	EventType string `bson:"eventType"`
 }
 
-func (history UsersHistory) For(userID application.UserID) ([]application.ContextualizedEvent, error) {
-	// TODO: Passer le context ?
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	cur, err := Collection(history.client, usersEventsCollectionName).Find(ctx, bson.D{primitive.E{Key: "userId", Value: userID.String()}})
+func (u UserEvent) StreamID() (string, error) {
+	return u.UserId, nil
+}
+
+func (users UsersHistory) For(userID application.UserID) ([]application.ContextualizedEvent, error) {
+	events, err := users.history.ForSingleStream(userID.String(), bson.D{primitive.E{Key: "userId", Value: userID.String()}})
 	if err != nil {
 		return nil, err
 	}
-	defer cur.Close(ctx)
-	results := []application.ContextualizedEvent{}
-	for cur.Next(ctx) {
-		var nextDecodedEvent UserEvent
-		err := cur.Decode(&nextDecodedEvent)
-		if err != nil {
-			return nil, err
-		}
-		userEvent, err := toUserEvent(nextDecodedEvent)
+
+	contextualizedEvents := []application.ContextualizedEvent{}
+	for _, nextEvent := range events {
+		userEvent, err := toUserEvent(nextEvent)
 		if err != nil {
 			return nil, err
 		}
 		// TODO: Ne pas passer par des contextualized
-		results = append(results, application.ContextualizedEvent{
+		contextualizedEvents = append(contextualizedEvents, application.ContextualizedEvent{
 			OriginalEvent: userEvent,
 			Context: application.EventContext{
 				UserID: userID,
 			},
 		})
 	}
-	if err := cur.Err(); err != nil {
-		return nil, err
-	}
-	return results, nil
+	return contextualizedEvents, nil
 }
 
 func toUserEvent(nextDecodedEvent UserEvent) (events.Event, error) {
@@ -69,26 +62,19 @@ func toUserEvent(nextDecodedEvent UserEvent) (events.Event, error) {
 
 func (history UsersHistory) Append(ctx context.Context, newEvents []application.ContextualizedEvent) error {
 	userID := ctx.Value(contexts.UserIDContextKey{}).(application.UserID)
-	collection := Collection(history.client, usersEventsCollectionName)
-	mongoctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 
-	documentsToInsert := []interface{}{}
+	documentsToInsert := []UserEvent{}
 	for _, newEvent := range newEvents {
 		documentsToInsert = append(documentsToInsert, UserEvent{
 			UserId:    userID.String(),
 			EventType: newEvent.OriginalEvent.(events.UserEvent).UserEventName(),
 		})
 	}
-	_, err := collection.InsertMany(mongoctx, documentsToInsert)
-	if err != nil {
-		return err
-	}
-	return nil
+	return history.history.Append(documentsToInsert)
 }
 
 func NewUsersHistory(client *DatabaseClient) application.UsersHistory {
 	return UsersHistory{
-		client,
+		history: NewHistory[string, UserEvent](client, usersEventsCollectionName),
 	}
 }
