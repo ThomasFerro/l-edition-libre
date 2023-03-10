@@ -8,7 +8,6 @@ import (
 	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"github.com/ThomasFerro/l-edition-libre/events"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type UsersHistory struct {
@@ -27,7 +26,7 @@ func (u UserEvent) StreamID() (string, error) {
 }
 
 func (users UsersHistory) For(userID application.UserID) ([]application.ContextualizedEvent, error) {
-	events, err := users.history.ForSingleStream(userID.String(), bson.D{primitive.E{Key: "userId", Value: userID.String()}})
+	events, err := users.history.ForSingleStream(userID.String(), bson.D{})
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +37,6 @@ func (users UsersHistory) For(userID application.UserID) ([]application.Contextu
 		if err != nil {
 			return nil, err
 		}
-		// TODO: Ne pas passer par des contextualized
 		contextualizedEvents = append(contextualizedEvents, application.ContextualizedEvent{
 			OriginalEvent: userEvent,
 			Context: application.EventContext{

@@ -32,7 +32,6 @@ func (m ManuscriptEvent) StreamID() (string, error) {
 	return m.ManuscriptID, nil
 }
 
-// TODO: Ne pas passer par des contextualized ?
 func manuscriptEventMapper(manuscriptEvent ManuscriptEvent) (application.ContextualizedEvent, error) {
 	manuscriptID, err := application.ParseManuscriptID(manuscriptEvent.ManuscriptID)
 	if err != nil {
@@ -55,12 +54,7 @@ func manuscriptEventMapper(manuscriptEvent ManuscriptEvent) (application.Context
 	}, nil
 }
 
-func (manuscripts ManuscriptsHistory) findManuscripts(query bson.D) (utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent], error) {
-	events, err := manuscripts.history.ForMultipleStreams(query)
-	if err != nil {
-		return utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent]{}, err
-	}
-
+func (manuscripts ManuscriptsHistory) mapManuscriptsEvents(events utils.OrderedMap[string, []ManuscriptEvent]) (utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent], error) {
 	contextualizedEvents := utils.NewOrderedMap[application.ManuscriptID, []application.ContextualizedEvent]()
 
 	for _, keyValue := range events.Map() {
@@ -82,8 +76,13 @@ func (manuscripts ManuscriptsHistory) findManuscripts(query bson.D) (utils.Order
 }
 
 func (manuscripts ManuscriptsHistory) For(manuscriptID application.ManuscriptID) ([]application.ContextualizedEvent, error) {
-	query := bson.D{primitive.E{Key: "manuscriptId", Value: manuscriptID.String()}}
-	results, err := manuscripts.findManuscripts(query)
+	events, err := manuscripts.history.ForSingleStream(manuscriptID.String(), bson.D{})
+	if err != nil {
+		return nil, err
+	}
+	toMap := utils.OrderedMap[string, []ManuscriptEvent]{}
+	toMap = toMap.Upsert(manuscriptID.String(), events)
+	results, err := manuscripts.mapManuscriptsEvents(toMap)
 	if err != nil {
 		return nil, err
 	}
@@ -91,11 +90,19 @@ func (manuscripts ManuscriptsHistory) For(manuscriptID application.ManuscriptID)
 }
 
 func (manuscripts ManuscriptsHistory) ForAll() (utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent], error) {
-	return manuscripts.findManuscripts(bson.D{})
+	events, err := manuscripts.history.ForMultipleStreams(bson.D{})
+	if err != nil {
+		return utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent]{}, err
+	}
+	return manuscripts.mapManuscriptsEvents(events)
 }
 
 func (manuscripts ManuscriptsHistory) ForAllOfUser(userID application.UserID) (utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent], error) {
-	return manuscripts.findManuscripts(bson.D{primitive.E{Key: "userId", Value: userID.String()}})
+	events, err := manuscripts.history.ForMultipleStreams(bson.D{primitive.E{Key: "userId", Value: userID.String()}})
+	if err != nil {
+		return utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent]{}, err
+	}
+	return manuscripts.mapManuscriptsEvents(events)
 }
 
 func toManuscriptEvent(nextDecodedEvent ManuscriptEvent) (events.Event, error) {

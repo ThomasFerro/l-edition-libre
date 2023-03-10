@@ -61,7 +61,8 @@ func (history GenericEventsHistory[StreamID, PersistedEvent]) Append(newEvents [
 }
 
 func (history GenericEventsHistory[StreamID, PersistedEvent]) ForSingleStream(streamID StreamID, query bson.D) ([]PersistedEvent, error) {
-	multipleStreams, err := history.ForMultipleStreams(query)
+	query = append(query, primitive.E{Key: "streamId", Value: streamID})
+	multipleStreams, err := history.find(query)
 	if err != nil {
 		return nil, err
 	}
@@ -77,14 +78,17 @@ func (history GenericEventsHistory[StreamID, PersistedEvent]) ForSingleStream(st
 }
 
 func (history GenericEventsHistory[StreamID, PersistedEvent]) ForMultipleStreams(query bson.D) (utils.OrderedMap[StreamID, []PersistedEvent], error) {
-	// TODO: Passer le context ?
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
 	findQuery := bson.D{}
 	for _, v := range query {
 		findQuery = append(findQuery, primitive.E{Key: fmt.Sprintf("event.%v", v.Key), Value: v.Value})
 	}
-	cur, err := Collection(history.client, history.collection).Find(ctx, findQuery)
+	return history.find(findQuery)
+}
+
+func (history GenericEventsHistory[StreamID, PersistedEvent]) find(query bson.D) (utils.OrderedMap[StreamID, []PersistedEvent], error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	cur, err := Collection(history.client, history.collection).Find(ctx, query)
 	if err != nil {
 		return utils.OrderedMap[StreamID, []PersistedEvent]{}, err
 	}
