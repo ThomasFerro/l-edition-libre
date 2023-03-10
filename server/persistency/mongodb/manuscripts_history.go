@@ -10,6 +10,7 @@ import (
 	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"github.com/ThomasFerro/l-edition-libre/events"
 	"github.com/ThomasFerro/l-edition-libre/persistency/mongodb/dtos"
+	"github.com/ThomasFerro/l-edition-libre/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -54,26 +55,27 @@ func manuscriptEventMapper(manuscriptEvent ManuscriptEvent) (application.Context
 	}, nil
 }
 
-func (manuscripts ManuscriptsHistory) findManuscripts(query bson.D) (map[application.ManuscriptID][]application.ContextualizedEvent, error) {
+func (manuscripts ManuscriptsHistory) findManuscripts(query bson.D) (utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent], error) {
 	events, err := manuscripts.history.ForMultipleStreams(query)
 	if err != nil {
-		return nil, err
+		return utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent]{}, err
 	}
 
-	contextualizedEvents := map[application.ManuscriptID][]application.ContextualizedEvent{}
+	contextualizedEvents := utils.NewOrderedMap[application.ManuscriptID, []application.ContextualizedEvent]()
 
 	for _, keyValue := range events.Map() {
 		rawManuscriptID := keyValue.Key
 		events := keyValue.Value
-		manuscriptID := application.MustParseManuscriptID(rawManuscriptID)
-		contextualizedEvents[manuscriptID] = []application.ContextualizedEvent{}
+		mappedEvents := []application.ContextualizedEvent{}
 		for _, nextEvent := range events {
 			manuscriptEvent, err := manuscriptEventMapper(nextEvent)
 			if err != nil {
-				return nil, err
+				return utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent]{}, err
 			}
-			contextualizedEvents[manuscriptID] = append(contextualizedEvents[manuscriptID], manuscriptEvent)
+			mappedEvents = append(mappedEvents, manuscriptEvent)
 		}
+		manuscriptID := application.MustParseManuscriptID(rawManuscriptID)
+		contextualizedEvents = contextualizedEvents.Upsert(manuscriptID, mappedEvents)
 	}
 
 	return contextualizedEvents, nil
@@ -85,14 +87,14 @@ func (manuscripts ManuscriptsHistory) For(manuscriptID application.ManuscriptID)
 	if err != nil {
 		return nil, err
 	}
-	return results[manuscriptID], nil
+	return results.Of(manuscriptID), nil
 }
 
-func (manuscripts ManuscriptsHistory) ForAll() (map[application.ManuscriptID][]application.ContextualizedEvent, error) {
+func (manuscripts ManuscriptsHistory) ForAll() (utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent], error) {
 	return manuscripts.findManuscripts(bson.D{})
 }
 
-func (manuscripts ManuscriptsHistory) ForAllOfUser(userID application.UserID) (map[application.ManuscriptID][]application.ContextualizedEvent, error) {
+func (manuscripts ManuscriptsHistory) ForAllOfUser(userID application.UserID) (utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent], error) {
 	return manuscripts.findManuscripts(bson.D{primitive.E{Key: "userId", Value: userID.String()}})
 }
 

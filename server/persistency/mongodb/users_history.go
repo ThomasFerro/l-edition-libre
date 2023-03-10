@@ -12,7 +12,6 @@ import (
 )
 
 type UsersHistory struct {
-	client  *DatabaseClient
 	history EventsHistory[string, UserEvent]
 }
 

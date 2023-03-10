@@ -6,6 +6,7 @@ import (
 	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"github.com/ThomasFerro/l-edition-libre/domain"
 	"github.com/ThomasFerro/l-edition-libre/events"
+	"github.com/ThomasFerro/l-edition-libre/utils"
 	"github.com/google/uuid"
 )
 
@@ -52,7 +53,7 @@ func isTheManuscriptWriter(ctx context.Context) (bool, error) {
 
 type ManuscriptsHistory interface {
 	For(ManuscriptID) ([]ContextualizedEvent, error)
-	ForAll() (map[ManuscriptID][]ContextualizedEvent, error)
-	ForAllOfUser(UserID) (map[ManuscriptID][]ContextualizedEvent, error)
+	ForAll() (utils.OrderedMap[ManuscriptID, []ContextualizedEvent], error)
+	ForAllOfUser(UserID) (utils.OrderedMap[ManuscriptID, []ContextualizedEvent], error)
 	Append(context.Context, []ContextualizedEvent) error
 }

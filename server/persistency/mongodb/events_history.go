@@ -89,7 +89,7 @@ func (history GenericEventsHistory[StreamID, PersistedEvent]) ForMultipleStreams
 		return utils.OrderedMap[StreamID, []PersistedEvent]{}, err
 	}
 	defer cur.Close(ctx)
-	results := utils.OrderedMap[StreamID, []PersistedEvent]{}
+	results := utils.NewOrderedMap[StreamID, []PersistedEvent]()
 	for cur.Next(ctx) {
 		var nextDocument InsertedDocument[StreamID, PersistedEvent]
 		err := cur.Decode(&nextDocument)

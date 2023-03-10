@@ -5,23 +5,26 @@ import (
 
 	"github.com/ThomasFerro/l-edition-libre/application"
 	"github.com/ThomasFerro/l-edition-libre/contexts"
+	"github.com/ThomasFerro/l-edition-libre/utils"
 )
 
 type ManuscriptsHistory struct {
-	history map[application.ManuscriptID][]application.ContextualizedEvent
+	history utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent]
 }
 
 func (manuscripts ManuscriptsHistory) For(manuscriptID application.ManuscriptID) ([]application.ContextualizedEvent, error) {
-	return manuscripts.history[manuscriptID], nil
+	return manuscripts.history.Of(manuscriptID), nil
 }
 
-func (manuscripts ManuscriptsHistory) ForAll() (map[application.ManuscriptID][]application.ContextualizedEvent, error) {
+func (manuscripts ManuscriptsHistory) ForAll() (utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent], error) {
 	return manuscripts.history, nil
 }
 
-func (manuscripts ManuscriptsHistory) ForAllOfUser(userID application.UserID) (map[application.ManuscriptID][]application.ContextualizedEvent, error) {
-	userHistory := map[application.ManuscriptID][]application.ContextualizedEvent{}
-	for manuscriptID, manuscriptHistory := range manuscripts.history {
+func (manuscripts ManuscriptsHistory) ForAllOfUser(userID application.UserID) (utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent], error) {
+	userHistory := utils.NewOrderedMap[application.ManuscriptID, []application.ContextualizedEvent]()
+	for _, keyValuePair := range manuscripts.history.Map() {
+		manuscriptID := keyValuePair.Key
+		manuscriptHistory := keyValuePair.Value
 		userManuscriptHistory := []application.ContextualizedEvent{}
 		for _, manuscriptEvent := range manuscriptHistory {
 			if manuscriptEvent.Context.UserID.String() == userID.String() {
@@ -29,7 +32,7 @@ func (manuscripts ManuscriptsHistory) ForAllOfUser(userID application.UserID) (m
 			}
 		}
 		if len(userManuscriptHistory) != 0 {
-			userHistory[manuscriptID] = userManuscriptHistory
+			userHistory = userHistory.Upsert(manuscriptID, userManuscriptHistory)
 		}
 	}
 	return userHistory, nil
@@ -37,17 +40,17 @@ func (manuscripts ManuscriptsHistory) ForAllOfUser(userID application.UserID) (m
 
 func (manuscripts ManuscriptsHistory) Append(ctx context.Context, newEvents []application.ContextualizedEvent) error {
 	manuscriptID := ctx.Value(contexts.ManuscriptIDContextKey{}).(application.ManuscriptID)
-	persistedEvents, exists := manuscripts.history[manuscriptID]
-	if !exists {
-		persistedEvents = make([]application.ContextualizedEvent, 0)
+	persistedEvents := manuscripts.history.Of(manuscriptID)
+	if !manuscripts.history.HasKey(manuscriptID) {
+		persistedEvents = []application.ContextualizedEvent{}
 	}
 	persistedEvents = append(persistedEvents, newEvents...)
-	manuscripts.history[manuscriptID] = persistedEvents
+	manuscripts.history = manuscripts.history.Upsert(manuscriptID, persistedEvents)
 	return nil
 }
 
 func NewManuscriptsHistory() application.ManuscriptsHistory {
 	return ManuscriptsHistory{
-		history: make(map[application.ManuscriptID][]application.ContextualizedEvent),
+		history: utils.NewOrderedMap[application.ManuscriptID, []application.ContextualizedEvent](),
 	}
 }

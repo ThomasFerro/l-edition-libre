@@ -7,6 +7,7 @@ import (
 	"github.com/ThomasFerro/l-edition-libre/api/helpers"
 	"github.com/ThomasFerro/l-edition-libre/application"
 	"github.com/ThomasFerro/l-edition-libre/contexts"
+	"github.com/ThomasFerro/l-edition-libre/utils"
 )
 
 func InjectManuscriptsHistory(manuscriptsHistory application.ManuscriptsHistory) Middleware {
@@ -28,7 +29,7 @@ func InjectContextualizedManuscriptsHistory(next HandlerFuncReturningRequest) Ha
 		r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedManuscriptsHistoryContextKey{}, mapHistories(manuscriptsHistory)))
 		manuscriptID, found := TryGetManuscriptID(r)
 		if found {
-			r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedManuscriptHistoryContextKey{}, mapHistory(manuscriptsHistory[manuscriptID])))
+			r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedManuscriptHistoryContextKey{}, mapHistory(manuscriptsHistory.Of(manuscriptID))))
 		}
 		return next(w, r)
 	}
@@ -38,10 +39,10 @@ func manuscriptsHistoryFromContext(ctx context.Context) application.ManuscriptsH
 	return ctx.Value(contexts.ManuscriptsHistoryContextKey{}).(application.ManuscriptsHistory)
 }
 
-func manuscriptsHistory(ctx context.Context) (map[application.ManuscriptID][]application.ContextualizedEvent, error) {
+func manuscriptsHistory(ctx context.Context) (utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent], error) {
 	isEditor, err := application.IsAnEditor(ctx)
 	if err != nil {
-		return nil, err
+		return utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent]{}, err
 	}
 	manuscriptsHistory := manuscriptsHistoryFromContext(ctx)
 	if isEditor {

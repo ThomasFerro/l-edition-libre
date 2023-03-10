@@ -3,13 +3,14 @@ package middlewares
 import (
 	"github.com/ThomasFerro/l-edition-libre/application"
 	"github.com/ThomasFerro/l-edition-libre/events"
+	"github.com/ThomasFerro/l-edition-libre/utils"
 )
 
-func mapHistories[T comparable](original map[T][]application.ContextualizedEvent) [][]events.DecoratedEvent {
+func mapHistories[T comparable](original utils.OrderedMap[T, []application.ContextualizedEvent]) [][]events.DecoratedEvent {
 	returned := [][]events.DecoratedEvent{}
 
-	for _, nextHistory := range original {
-		returned = append(returned, mapHistory(nextHistory))
+	for _, keyValuePair := range original.Map() {
+		returned = append(returned, mapHistory(keyValuePair.Value))
 	}
 	return returned
 }
