@@ -1,4 +1,6 @@
+import { redirectToAuthenticationPage, useAuthentication } from '@/services/authentication'
 import { createRouter, createWebHistory } from 'vue-router'
+import AuthenticationView from '../views/AuthenticationView.vue'
 import HomeView from '../views/HomeView.vue'
 
 const router = createRouter({
@@ -8,6 +10,11 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: AuthenticationView
     },
     // {
     //   path: '/about',
@@ -19,5 +26,7 @@ const router = createRouter({
     // }
   ]
 })
+
+redirectToAuthenticationPage(router)
 
 export default router

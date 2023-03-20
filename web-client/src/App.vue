@@ -5,12 +5,7 @@ import { RouterLink, RouterView } from 'vue-router'
 <template>
   <v-card class="h-100">
     <v-layout>
-      <v-app-bar title="L'édition libre">
-        <nav>
-          <RouterLink to="/">Home</RouterLink>
-          <RouterLink to="/about">About</RouterLink>
-        </nav>
-      </v-app-bar>
+      <v-app-bar title="L'édition libre"></v-app-bar>
       <v-main style="min-height: 300px;">
         <RouterView />
       </v-main>

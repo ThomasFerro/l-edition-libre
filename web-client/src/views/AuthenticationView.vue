@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { useAuthentication } from '@/services/authentication';
 
-const { username } = useAuthentication() 
+const { authenticate } = useAuthentication()
 </script>
 
 <template>
   <main>
-    <h1>Bienvenue {{ username }}</h1>
+    <v-btn data-test="Authenticate button" @click="authenticate()">Authenticate</v-btn>
   </main>
 </template>
+ 
