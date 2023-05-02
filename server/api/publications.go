@@ -39,7 +39,10 @@ func handlePublicationState(w http.ResponseWriter, r *http.Request) *http.Reques
 	return r
 }
 
-func handlePublicationsFuncs(app application.Application, publicationsHistory application.PublicationsHistory) {
+func handlePublicationsFuncs(
+	app application.Application,
+	publicationsHistory application.PublicationsHistory,
+	jwtMiddleware middlewares.Middleware) {
 	routes := []router.Route{
 		{
 			Path:   "/api/publications/:publicationID",
@@ -49,6 +52,7 @@ func handlePublicationsFuncs(app application.Application, publicationsHistory ap
 				middlewares.ExtractPublicationID,
 				middlewares.InjectPublicationsHistory(publicationsHistory),
 				middlewares.InjectApplication(app),
+				jwtMiddleware,
 			},
 			Handler: handlePublicationState,
 		},

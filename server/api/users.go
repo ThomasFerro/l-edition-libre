@@ -66,7 +66,10 @@ func handlePromoteToEditor(w http.ResponseWriter, r *http.Request) *http.Request
 	return r
 }
 
-func handleUsersFuncs(app application.Application, userHistory application.UsersHistory) {
+func handleUsersFuncs(
+	app application.Application,
+	userHistory application.UsersHistory,
+	jwtMiddleware middlewares.Middleware) {
 	routes := []router.Route{
 		{
 			Path:   "/api/users",
@@ -76,6 +79,8 @@ func handleUsersFuncs(app application.Application, userHistory application.Users
 				middlewares.InjectContextualizedUserHistory,
 				middlewares.InjectUsersHistory(userHistory),
 				middlewares.InjectApplication(app),
+				// TODO: Voir comment faire pour créer un nouveau compte (est-ce encore nécessaire ?)
+				// jwtMiddleware,
 			},
 			Handler: handleAccountCreation,
 		},
@@ -89,6 +94,7 @@ func handleUsersFuncs(app application.Application, userHistory application.Users
 				middlewares.InjectUsersHistory(userHistory),
 				middlewares.ExtractUserID,
 				middlewares.InjectApplication(app),
+				jwtMiddleware,
 			},
 			Handler: handlePromoteToEditor,
 		},

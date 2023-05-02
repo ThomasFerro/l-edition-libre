@@ -1,15 +1,17 @@
-import { redirectToAuthenticationPage, useAuthentication } from '@/services/authentication'
+import { shouldbeAuthenticated, useAuthentication } from '@/services/authentication'
+import type { App } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import AuthenticationView from '../views/AuthenticationView.vue'
 import HomeView from '../views/HomeView.vue'
 
-const router = createRouter({
+const router = (app: App) => createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
       name: 'home',
-      component: HomeView
+      component: HomeView,
+      beforeEnter: shouldbeAuthenticated(app)
     },
     {
       path: '/login',
@@ -26,7 +28,5 @@ const router = createRouter({
     // }
   ]
 })
-
-redirectToAuthenticationPage(router)
 
 export default router

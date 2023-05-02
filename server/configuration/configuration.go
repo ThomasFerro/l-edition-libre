@@ -13,6 +13,8 @@ const (
 	ADMIN_API_KEY           ConfigurationKey = "ADMIN_API_KEY"
 	MONGO_CONNECTION_STRING ConfigurationKey = "MONGO_CONNECTION_STRING"
 	MONGO_DATABASE_NAME     ConfigurationKey = "MONGO_DATABASE_NAME"
+	AUTH0_DOMAIN            ConfigurationKey = "AUTH0_DOMAIN"
+	AUTH0_AUDIENCE          ConfigurationKey = "AUTH0_AUDIENCE"
 )
 
 var ConfigurationsWithFallback = map[ConfigurationKey]string{
@@ -20,6 +22,8 @@ var ConfigurationsWithFallback = map[ConfigurationKey]string{
 	ADMIN_API_KEY:           "ADMIN",
 	MONGO_CONNECTION_STRING: "mongodb://127.0.0.1:27017/?directConnection=true",
 	MONGO_DATABASE_NAME:     "l-edition-libre",
+	AUTH0_DOMAIN:            "l-edition-libre.eu.auth0.com",
+	AUTH0_AUDIENCE:          "https://leditionlibre/api",
 }
 
 func GetConfiguration(configurationKey ConfigurationKey) string {

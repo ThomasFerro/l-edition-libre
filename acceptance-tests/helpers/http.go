@@ -73,6 +73,7 @@ func addUserHeader(ctx context.Context, request *http.Request) {
 		return
 	}
 	request.Header.Add(middlewares.UserIDHeader, currentUser.String())
+	request.Header.Add("Authorization", "Bearer oui")
 }
 
 func addCustomHeaders(ctx context.Context, request *http.Request, headers map[string]string) {

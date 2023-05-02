@@ -39,6 +39,7 @@ func Start(databaseName string) {
 
 	client, err := mongodb.GetClient(databaseName)
 	if err != nil {
+		slog.Error("unable to get mongo client", err)
 		return
 	}
 	defer func() {
@@ -50,12 +51,17 @@ func Start(databaseName string) {
 
 	app := application.NewApplication(managedCommands, managedEvents, managedQueries)
 	slog.Info("setup HTTP API")
+	jwtMiddleware, err := middlewares.EnsureTokenIsValid()
+	if err != nil {
+		slog.Error("unable to get jwt middleware", err)
+		return
+	}
 
 	handleHealthCheckFuncs(client)
 	handleDatabaseFuncs(client)
-	handleManuscriptsFuncs(app, usersHistory, publicationsHistory, manuscriptsHistory, filesSaver)
-	handlePublicationsFuncs(app, publicationsHistory)
-	handleUsersFuncs(app, usersHistory)
+	handleManuscriptsFuncs(app, usersHistory, publicationsHistory, manuscriptsHistory, filesSaver, jwtMiddleware)
+	handlePublicationsFuncs(app, publicationsHistory, jwtMiddleware)
+	handleUsersFuncs(app, usersHistory, jwtMiddleware)
 
 	slog.Info("HTTP API start listening")
 	port := configuration.GetConfiguration(configuration.PORT)
