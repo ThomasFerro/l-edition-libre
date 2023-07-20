@@ -79,8 +79,7 @@ func handleUsersFuncs(
 				middlewares.InjectContextualizedUserHistory,
 				middlewares.InjectUsersHistory(userHistory),
 				middlewares.InjectApplication(app),
-				// TODO: Voir comment faire pour créer un nouveau compte (est-ce encore nécessaire ?)
-				// jwtMiddleware,
+				jwtMiddleware,
 			},
 			Handler: handleAccountCreation,
 		},

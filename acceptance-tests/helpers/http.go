@@ -14,8 +14,6 @@ import (
 	"strings"
 
 	"github.com/ThomasFerro/l-edition-libre/api/helpers"
-	"github.com/ThomasFerro/l-edition-libre/api/middlewares"
-	"github.com/ThomasFerro/l-edition-libre/application"
 )
 
 func bodyToReader(body interface{}) (io.Reader, error) {
@@ -66,20 +64,27 @@ func extractResponse(response *http.Response, responseDto interface{}) error {
 	return nil
 }
 
-// TODO: Ne pas passer par un header mais par un JWT (OAuth2 ?)
-func addUserHeader(ctx context.Context, request *http.Request) {
-	currentUser, ok := ctx.Value(AuthentifiedUser{}).(application.UserID)
-	if !ok {
-		return
-	}
-	request.Header.Add(middlewares.UserIDHeader, currentUser.String())
-	request.Header.Add("Authorization", "Bearer oui")
-}
+// func addUserHeader(ctx context.Context, request *http.Request) {
+// 	currentUser, ok := ctx.Value(AuthentifiedUser{}).(application.UserID)
+// 	if !ok {
+// 		return
+// 	}
+// 	request.Header.Add(middlewares.UserIDHeader, currentUser.String())
+// 	request.Header.Add("Authorization", "Bearer oui")
+// }
 
 func addCustomHeaders(ctx context.Context, request *http.Request, headers map[string]string) {
 	for headerKey, headerValue := range headers {
 		request.Header.Add(headerKey, headerValue)
 	}
+}
+
+func addToken(ctx context.Context, request *http.Request, token string) {
+	if token == "" {
+		return
+	}
+
+	request.Header.Add("Authorization", fmt.Sprintf("Bearer %v", token))
 }
 
 type HttpRequest struct {
@@ -88,9 +93,10 @@ type HttpRequest struct {
 	Headers     map[string]string
 	Body        interface{}
 	ResponseDto interface{}
+	Token       string
 }
 
-func doCall(ctx context.Context, request *http.Request, responseDto interface{}) (context.Context, error) {
+func DoCall(ctx context.Context, request *http.Request, responseDto interface{}) (context.Context, error) {
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		return ctx, fmt.Errorf("unable to send request: %v", err)
@@ -122,9 +128,9 @@ func Call(ctx context.Context, httpRequest HttpRequest) (context.Context, error)
 	if err != nil {
 		return ctx, fmt.Errorf("unable to create new http request: %v", err)
 	}
-	addUserHeader(ctx, request)
 	addCustomHeaders(ctx, request, httpRequest.Headers)
-	return doCall(ctx, request, httpRequest.ResponseDto)
+	addToken(ctx, request, httpRequest.Token)
+	return DoCall(ctx, request, httpRequest.ResponseDto)
 }
 
 func requestFromFormData(url string, filePath string, otherData map[string]string) (io.Reader, string, error) {
@@ -173,6 +179,7 @@ func PostFile(ctx context.Context, url string, filePath string, otherData map[st
 	}
 	request.Header.Add("Content-Type", formDataContentType)
 
-	addUserHeader(ctx, request)
-	return doCall(ctx, request, responseDto)
+	// TODO: AddToken ?
+	// addUserHeader(ctx, request)
+	return DoCall(ctx, request, responseDto)
 }

@@ -9,6 +9,16 @@ import (
 type ErrorKey struct{}
 type TagsKey struct{}
 
+type AuthentifiedUserToken struct{}
+
+func SetAuthentifiedUserToken(ctx context.Context, token string) context.Context {
+	return context.WithValue(ctx, AuthentifiedUserToken{}, token)
+}
+
+func GetAuthentifiedUserToken(ctx context.Context) string {
+	return ctx.Value(AuthentifiedUserToken{}).(string)
+}
+
 type AuthentifiedUser struct{}
 
 func SetAuthentifiedUserID(ctx context.Context, userID application.UserID) context.Context {

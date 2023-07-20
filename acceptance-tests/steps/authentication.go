@@ -5,6 +5,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/ThomasFerro/l-edition-libre/api"
 	"github.com/ThomasFerro/l-edition-libre/api/middlewares"
@@ -37,15 +39,55 @@ func authentifyAsEditor(ctx context.Context) (context.Context, error) {
 		})
 }
 
+type TokenResponse struct {
+	AccessToken string `json:"access_token"`
+}
+
+func (t TokenResponse) String() string {
+	return fmt.Sprintf("TokenResponse{ AccessToken: %v }\n", t.AccessToken)
+}
+
+func getTokenFor(ctx context.Context, displayedName string) (string, error) {
+	// TODO: Switch entre les variables en fonction du display name
+	path := configuration.GetConfiguration("AUTH0_PATH")
+	data := url.Values{}
+	data.Set("grant_type", "password")
+	data.Set("audience", configuration.GetConfiguration("AUTH0_AUDIENCE"))
+	data.Set("username", configuration.GetConfiguration("AUTH0_WRITER_USERNAME"))
+	data.Set("password", configuration.GetConfiguration("AUTH0_WRITER_PASSWORD"))
+	data.Set("client_id", configuration.GetConfiguration("AUTH0_CLIENT_ID"))
+	data.Set("client_secret", configuration.GetConfiguration("AUTH0_CLIENT_SECRET"))
+
+	r, err := http.NewRequest(http.MethodPost, path, strings.NewReader(data.Encode()))
+	if err != nil {
+		return "", err
+	}
+	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	var tokenResponse TokenResponse
+	ctx, err = helpers.DoCall(ctx, r, &tokenResponse)
+	if err != nil {
+		return "", err
+	}
+
+	return tokenResponse.AccessToken, nil
+}
+
 func authentifyAs(ctx context.Context, displayedName string) (context.Context, error) {
+	token, err := getTokenFor(ctx, displayedName)
+	if err != nil {
+		return nil, err
+	}
+
 	var newUser api.CreateAccountResponseDto
-	ctx, err := helpers.Call(ctx, helpers.HttpRequest{
+	ctx, err = helpers.Call(ctx, helpers.HttpRequest{
 		Url:    "http://localhost:8080/api/users",
 		Method: http.MethodPost,
 		Body: api.CreateAccountRequestDto{
 			DisplayedName: displayedName,
 		},
 		ResponseDto: &newUser,
+		Token:       token,
 	})
 	if err != nil {
 		return ctx, fmt.Errorf("unable to create a new account: %v", err)
