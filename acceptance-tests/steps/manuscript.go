@@ -31,15 +31,19 @@ func theWriterSubmittedAManuscript(ctx context.Context, writerName string, manus
 func sumbitManuscript(ctx context.Context, manuscriptName string) (context.Context, error) {
 	var newManuscript api.SubmitManuscriptResponseDto
 	ctx, authentifiedUserName := helpers.GetAuthentifiedUserName(ctx)
+	ctx, token := helpers.GetUserToken(ctx)
 	ctx, err := helpers.PostFile(
 		ctx,
-		"http://localhost:8080/api/manuscripts",
+		helpers.HttpRequest{
+			Url:         "http://localhost:8080/api/manuscripts",
+			ResponseDto: &newManuscript,
+			Token:       token,
+		},
 		"./assets/test.pdf",
 		map[string]string{
 			"title":  manuscriptName,
 			"author": authentifiedUserName,
 		},
-		&newManuscript,
 	)
 	if err != nil {
 		return ctx, fmt.Errorf("unable to submit the manuscript: %v", err)

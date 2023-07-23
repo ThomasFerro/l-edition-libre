@@ -26,7 +26,11 @@ func SetAuthentifiedUserID(ctx context.Context, userID application.UserID) conte
 }
 
 func GetAuthentifiedUserID(ctx context.Context) application.UserID {
-	return ctx.Value(AuthentifiedUser{}).(application.UserID)
+	value := ctx.Value(AuthentifiedUser{})
+	if value == nil {
+		return ""
+	}
+	return value.(application.UserID)
 }
 
 type UserNameByIDKey struct{}
@@ -59,6 +63,38 @@ func SetUserName(ctx context.Context, userID application.UserID, userName string
 
 	userNameByID[userID] = userName
 	return context.WithValue(ctx, UserNameByIDKey{}, userNameByID)
+}
+
+type TokenByUserIdKey struct{}
+type TokenByUserID map[application.UserID]string
+
+func getOrCreateTokenByIDFromContext(ctx context.Context) (context.Context, TokenByUserID, error) {
+	tokenByUserID, ok := ctx.Value(TokenByUserIdKey{}).(TokenByUserID)
+	if ok {
+		return ctx, tokenByUserID, nil
+	}
+	newMap := TokenByUserID{}
+	return context.WithValue(ctx, TokenByUserIdKey{}, newMap), newMap, nil
+}
+
+func GetUserToken(ctx context.Context) (context.Context, string) {
+	userID := GetAuthentifiedUserID(ctx)
+	ctx, tokenByUserID, err := getOrCreateTokenByIDFromContext(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	return ctx, tokenByUserID[userID]
+}
+
+func SetToken(ctx context.Context, userID application.UserID, token string) context.Context {
+	ctx, tokenByUserID, err := getOrCreateTokenByIDFromContext(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	tokenByUserID[userID] = token
+	return context.WithValue(ctx, TokenByUserIdKey{}, tokenByUserID)
 }
 
 type ManuscriptIdByNameKey struct{}

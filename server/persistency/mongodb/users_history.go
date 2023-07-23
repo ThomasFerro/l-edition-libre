@@ -26,7 +26,7 @@ func (u UserEvent) StreamID() (string, error) {
 }
 
 func (users UsersHistory) For(userID application.UserID) ([]application.ContextualizedEvent, error) {
-	events, err := users.history.ForSingleStream(userID.String(), bson.D{})
+	events, err := users.history.ForSingleStream(string(userID), bson.D{})
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (history UsersHistory) Append(ctx context.Context, newEvents []application.
 	documentsToInsert := []UserEvent{}
 	for _, newEvent := range newEvents {
 		documentsToInsert = append(documentsToInsert, UserEvent{
-			UserId:    userID.String(),
+			UserId:    string(userID),
 			EventType: newEvent.OriginalEvent.(events.UserEvent).UserEventName(),
 		})
 	}

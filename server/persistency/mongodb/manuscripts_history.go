@@ -37,10 +37,7 @@ func manuscriptEventMapper(manuscriptEvent ManuscriptEvent) (application.Context
 	if err != nil {
 		return application.ContextualizedEvent{}, err
 	}
-	userID, err := application.ParseUserID(manuscriptEvent.UserID)
-	if err != nil {
-		return application.ContextualizedEvent{}, err
-	}
+	userID := application.UserID(manuscriptEvent.UserID)
 	originalEvent, err := toManuscriptEvent(manuscriptEvent)
 	if err != nil {
 		return application.ContextualizedEvent{}, err
@@ -98,7 +95,7 @@ func (manuscripts ManuscriptsHistory) ForAll() (utils.OrderedMap[application.Man
 }
 
 func (manuscripts ManuscriptsHistory) ForAllOfUser(userID application.UserID) (utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent], error) {
-	events, err := manuscripts.history.ForMultipleStreams(bson.D{primitive.E{Key: "userId", Value: userID.String()}})
+	events, err := manuscripts.history.ForMultipleStreams(bson.D{primitive.E{Key: "userId", Value: userID}})
 	if err != nil {
 		return utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent]{}, err
 	}
@@ -143,7 +140,7 @@ func (manuscripts ManuscriptsHistory) Append(ctx context.Context, newEvents []ap
 			return err
 		}
 		documentsToInsert = append(documentsToInsert, ManuscriptEvent{
-			UserID:       userID.String(),
+			UserID:       string(userID),
 			ManuscriptID: manuscriptID.String(),
 			EventType:    manuscriptEvent.ManuscriptEventName(),
 			EventPayload: string(payload),

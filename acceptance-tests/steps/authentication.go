@@ -28,6 +28,7 @@ func authentifyAsEditor(ctx context.Context) (context.Context, error) {
 	if err != nil {
 		return ctx, fmt.Errorf("unable to authentify: %v", err)
 	}
+	ctx, token := helpers.GetUserToken(ctx)
 	headers := make(map[string]string, 0)
 	headers[middlewares.ApiKeyHeader] = configuration.GetConfiguration(configuration.ADMIN_API_KEY)
 	return helpers.Call(
@@ -36,6 +37,7 @@ func authentifyAsEditor(ctx context.Context) (context.Context, error) {
 			Url:     "http://localhost:8080/api/users/promote-to-editor",
 			Method:  http.MethodPost,
 			Headers: headers,
+			Token:   token,
 		})
 }
 
@@ -47,16 +49,30 @@ func (t TokenResponse) String() string {
 	return fmt.Sprintf("TokenResponse{ AccessToken: %v }\n", t.AccessToken)
 }
 
-func getTokenFor(ctx context.Context, displayedName string) (string, error) {
-	// TODO: Switch entre les variables en fonction du display name
+func GetTokenFor(ctx context.Context, displayedName string) (string, error) {
+	username := ""
+	password := ""
+	if displayedName == "Writer" || displayedName == "First author" {
+		username = configuration.GetConfiguration("AUTH0_WRITER_USERNAME")
+		password = configuration.GetConfiguration("AUTH0_WRITER_PASSWORD")
+	} else if displayedName == "Another author" {
+		username = configuration.GetConfiguration("AUTH0_SECOND_WRITER_USERNAME")
+		password = configuration.GetConfiguration("AUTH0_SECOND_WRITER_PASSWORD")
+	} else if displayedName == "Editor" {
+		username = configuration.GetConfiguration("AUTH0_EDITOR_USERNAME")
+		password = configuration.GetConfiguration("AUTH0_EDITOR_PASSWORD")
+	} else {
+		return "", fmt.Errorf("%v is not a known user and thus cannot retrieve its token", displayedName)
+	}
 	path := configuration.GetConfiguration("AUTH0_PATH")
 	data := url.Values{}
 	data.Set("grant_type", "password")
 	data.Set("audience", configuration.GetConfiguration("AUTH0_AUDIENCE"))
-	data.Set("username", configuration.GetConfiguration("AUTH0_WRITER_USERNAME"))
-	data.Set("password", configuration.GetConfiguration("AUTH0_WRITER_PASSWORD"))
+	data.Set("username", username)
+	data.Set("password", password)
 	data.Set("client_id", configuration.GetConfiguration("AUTH0_CLIENT_ID"))
 	data.Set("client_secret", configuration.GetConfiguration("AUTH0_CLIENT_SECRET"))
+	data.Set("scope", "openid")
 
 	r, err := http.NewRequest(http.MethodPost, path, strings.NewReader(data.Encode()))
 	if err != nil {
@@ -74,9 +90,9 @@ func getTokenFor(ctx context.Context, displayedName string) (string, error) {
 }
 
 func authentifyAs(ctx context.Context, displayedName string) (context.Context, error) {
-	token, err := getTokenFor(ctx, displayedName)
+	token, err := GetTokenFor(ctx, displayedName)
 	if err != nil {
-		return nil, err
+		return ctx, err
 	}
 
 	var newUser api.CreateAccountResponseDto
@@ -93,8 +109,9 @@ func authentifyAs(ctx context.Context, displayedName string) (context.Context, e
 		return ctx, fmt.Errorf("unable to create a new account: %v", err)
 	}
 
-	newUserID := application.MustParseUserID(newUser.Id)
+	newUserID := application.UserID(newUser.Id)
 	ctx = helpers.SetUserName(ctx, newUserID, displayedName)
+	ctx = helpers.SetToken(ctx, newUserID, token)
 	return helpers.SetAuthentifiedUserID(ctx, newUserID), nil
 }
 

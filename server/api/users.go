@@ -9,6 +9,7 @@ import (
 	"github.com/ThomasFerro/l-edition-libre/api/router"
 	"github.com/ThomasFerro/l-edition-libre/application"
 	"github.com/ThomasFerro/l-edition-libre/commands"
+	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"golang.org/x/exp/slog"
 )
 
@@ -31,8 +32,6 @@ func handleAccountCreation(w http.ResponseWriter, r *http.Request) *http.Request
 		return r
 	}
 
-	newUserID := application.NewUserID()
-	r = middlewares.SetUserId(r, newUserID)
 	app := middlewares.ApplicationFromRequest(r)
 	ctx, err := app.SendCommand(r.Context(), commands.CreateAccount{
 		DisplayedName: dto.DisplayedName,
@@ -43,9 +42,10 @@ func handleAccountCreation(w http.ResponseWriter, r *http.Request) *http.Request
 		return r
 	}
 	r = r.WithContext(ctx)
-	slog.Info("acount created", "user_id", newUserID.String())
+	newUserID := ctx.Value(contexts.UserIDContextKey{}).(application.UserID)
+	slog.Info("acount created", "user_id", newUserID)
 	helpers.WriteJson(w, CreateAccountResponseDto{
-		Id: newUserID.String(),
+		Id: string(newUserID),
 	})
 	return r
 }
@@ -78,6 +78,7 @@ func handleUsersFuncs(
 				middlewares.PersistNewEvents,
 				middlewares.InjectContextualizedUserHistory,
 				middlewares.InjectUsersHistory(userHistory),
+				middlewares.ExtractUserID,
 				middlewares.InjectApplication(app),
 				jwtMiddleware,
 			},

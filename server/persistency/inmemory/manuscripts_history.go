@@ -27,7 +27,7 @@ func (manuscripts ManuscriptsHistory) ForAllOfUser(userID application.UserID) (u
 		manuscriptHistory := keyValuePair.Value
 		userManuscriptHistory := []application.ContextualizedEvent{}
 		for _, manuscriptEvent := range manuscriptHistory {
-			if manuscriptEvent.Context.UserID.String() == userID.String() {
+			if manuscriptEvent.Context.UserID == userID {
 				userManuscriptHistory = append(userManuscriptHistory, manuscriptEvent)
 			}
 		}

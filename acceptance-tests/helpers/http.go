@@ -64,15 +64,6 @@ func extractResponse(response *http.Response, responseDto interface{}) error {
 	return nil
 }
 
-// func addUserHeader(ctx context.Context, request *http.Request) {
-// 	currentUser, ok := ctx.Value(AuthentifiedUser{}).(application.UserID)
-// 	if !ok {
-// 		return
-// 	}
-// 	request.Header.Add(middlewares.UserIDHeader, currentUser.String())
-// 	request.Header.Add("Authorization", "Bearer oui")
-// }
-
 func addCustomHeaders(ctx context.Context, request *http.Request, headers map[string]string) {
 	for headerKey, headerValue := range headers {
 		request.Header.Add(headerKey, headerValue)
@@ -129,7 +120,12 @@ func Call(ctx context.Context, httpRequest HttpRequest) (context.Context, error)
 		return ctx, fmt.Errorf("unable to create new http request: %v", err)
 	}
 	addCustomHeaders(ctx, request, httpRequest.Headers)
-	addToken(ctx, request, httpRequest.Token)
+	ctx, tokenFromContext := GetUserToken(ctx)
+	if httpRequest.Token != "" {
+		addToken(ctx, request, httpRequest.Token)
+	} else if tokenFromContext != "" {
+		addToken(ctx, request, tokenFromContext)
+	}
 	return DoCall(ctx, request, httpRequest.ResponseDto)
 }
 
@@ -167,19 +163,18 @@ func requestFromFormData(url string, filePath string, otherData map[string]strin
 	return body, writer.FormDataContentType(), nil
 }
 
-func PostFile(ctx context.Context, url string, filePath string, otherData map[string]string, responseDto interface{}) (context.Context, error) {
-	body, formDataContentType, err := requestFromFormData(url, filePath, otherData)
+func PostFile(ctx context.Context, httpRequest HttpRequest, filePath string, otherData map[string]string) (context.Context, error) {
+	body, formDataContentType, err := requestFromFormData(httpRequest.Url, filePath, otherData)
 	if err != nil {
 		return ctx, err
 	}
 
-	request, err := http.NewRequest(http.MethodPost, url, body)
+	request, err := http.NewRequest(http.MethodPost, httpRequest.Url, body)
 	if err != nil {
 		return nil, err
 	}
 	request.Header.Add("Content-Type", formDataContentType)
 
-	// TODO: AddToken ?
-	// addUserHeader(ctx, request)
-	return DoCall(ctx, request, responseDto)
+	addToken(ctx, request, httpRequest.Token)
+	return DoCall(ctx, request, httpRequest.ResponseDto)
 }

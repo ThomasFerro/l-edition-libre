@@ -5,31 +5,10 @@ import (
 
 	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"github.com/ThomasFerro/l-edition-libre/events"
-	"github.com/google/uuid"
 	"golang.org/x/exp/slog"
 )
 
-type UserID uuid.UUID
-
-func (u UserID) String() string {
-	return uuid.UUID(u).String()
-}
-
-func MustParseUserID(value string) UserID {
-	return UserID(uuid.MustParse(value))
-}
-
-func ParseUserID(value string) (UserID, error) {
-	parsed, err := uuid.Parse(value)
-	if err != nil {
-		return UserID{}, err
-	}
-	return UserID(parsed), nil
-}
-
-func NewUserID() UserID {
-	return UserID(uuid.New())
-}
+type UserID string
 
 func IsAnEditor(ctx context.Context) (bool, error) {
 	getHistory := contexts.FromContextOrDefault(ctx, contexts.ContextualizedUserHistoryContextKey{}, func(c context.Context) ([]ContextualizedEvent, error) {
