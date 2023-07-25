@@ -19,6 +19,10 @@ func authentifyAsWriter(ctx context.Context) (context.Context, error) {
 	return authentifyAs(ctx, "Writer")
 }
 
+func authentifyAsAnotherWriter(ctx context.Context) (context.Context, error) {
+	return authentifyAs(ctx, "Another author")
+}
+
 func authentifyAsWriterWithName(ctx context.Context, writer string) (context.Context, error) {
 	return authentifyAs(ctx, writer)
 }
@@ -119,5 +123,5 @@ func AuthenticationSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I am an authentified editor$`, authentifyAsEditor)
 	ctx.Step(`^I authentify as an editor$`, authentifyAsEditor)
 	ctx.Step(`I am an authentified writer`, authentifyAsWriter)
-	ctx.Step(`I am authentified as another writer`, authentifyAsWriter)
+	ctx.Step(`I am authentified as another writer`, authentifyAsAnotherWriter)
 }

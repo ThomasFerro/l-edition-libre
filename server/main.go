@@ -7,4 +7,5 @@ import (
 
 func main() {
 	api.Start(configuration.GetConfiguration(configuration.MONGO_DATABASE_NAME))
+	select {}
 }

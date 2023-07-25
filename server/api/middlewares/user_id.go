@@ -2,14 +2,11 @@ package middlewares
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
-	"io/ioutil"
 	"net/http"
-	"net/url"
 	"strings"
 
+	"github.com/ThomasFerro/l-edition-libre/api/helpers/auth0"
 	"github.com/ThomasFerro/l-edition-libre/application"
 	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"golang.org/x/exp/slog"
@@ -45,44 +42,13 @@ func ExtractUserID(next HandlerFuncReturningRequest) HandlerFuncReturningRequest
 	}
 }
 
-type UserInfoResponse struct {
-	Sub string `json:"sub"`
-}
-
 func extractUserIDFromJwt(r *http.Request) (application.UserID, error) {
 	token, err := extractBearerToken(r.Header)
 	if err != nil {
 		return "", err
 	}
 
-	// TODO: Extraire ? Récupérer de la logique du helper de tests ?
-	userInfoUrl, err := url.Parse("https://" + auth0Domain + "/oauth/userinfo")
-	if err != nil {
-		return "", fmt.Errorf("Failed to parse the userinfo url: %v", err)
-	}
-	req, err := http.NewRequest("GET", userInfoUrl.String(), nil)
-	if err != nil {
-		return "", fmt.Errorf("Failed to create the userinfo request: %v", err)
-	}
-	req.Header.Set("Authorization", "Bearer "+token)
-	response, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("Userinfo request error: %v", err)
-	}
-	defer response.Body.Close()
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return "", fmt.Errorf("userinfo body read error: %v", err)
-	}
-	if response.StatusCode != 200 {
-		return "", fmt.Errorf("wrong userinfo response code: %v %v", response.StatusCode, string(body))
-	}
-	var responseDto UserInfoResponse
-	err = json.Unmarshal(body, &responseDto)
-	if err != nil {
-		return "", fmt.Errorf("userinfo body unmarshal error: %v (body: %v)", err, string(body))
-	}
-	return application.UserID(responseDto.Sub), nil
+	return auth0.ExtractUserID(token)
 }
 
 func extractBearerToken(header http.Header) (string, error) {

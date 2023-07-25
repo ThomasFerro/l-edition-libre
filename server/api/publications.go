@@ -40,6 +40,7 @@ func handlePublicationState(w http.ResponseWriter, r *http.Request) *http.Reques
 }
 
 func handlePublicationsFuncs(
+	serveMux *http.ServeMux,
 	app application.Application,
 	publicationsHistory application.PublicationsHistory,
 	jwtMiddleware middlewares.Middleware) {
@@ -57,5 +58,5 @@ func handlePublicationsFuncs(
 			Handler: handlePublicationState,
 		},
 	}
-	router.HandleRoutes(routes)
+	router.HandleRoutes(serveMux, routes)
 }

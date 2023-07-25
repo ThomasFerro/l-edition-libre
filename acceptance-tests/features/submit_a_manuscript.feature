@@ -14,7 +14,7 @@ Feature: Submit a manusript
   Scenario: List submitted manuscripts
     Given the writer "First author" submitted a manuscript for "My first novel"
     And the writer "First author" submitted a manuscript for "My second novel"
-    And I am an authentified writer
+    And I am authentified as another writer
     When I submit a manuscript for "Essay #1"
     And I submit a manuscript for "Essay #2"
     Then my manuscripts are the following

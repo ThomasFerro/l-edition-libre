@@ -7,15 +7,12 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/ThomasFerro/l-edition-libre/configuration"
+	"github.com/ThomasFerro/l-edition-libre/api/helpers/auth0"
 	jwtmiddleware "github.com/auth0/go-jwt-middleware/v2"
 	"github.com/auth0/go-jwt-middleware/v2/jwks"
 	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"golang.org/x/exp/slog"
 )
-
-var auth0Domain = configuration.GetConfiguration(configuration.AUTH0_DOMAIN)
-var auth0Audience = configuration.GetConfiguration(configuration.AUTH0_AUDIENCE)
 
 type CustomClaims struct {
 }
@@ -25,7 +22,7 @@ func (c CustomClaims) Validate(ctx context.Context) error {
 }
 
 func EnsureTokenIsValid() (Middleware, error) {
-	issuerURL, err := url.Parse("https://" + auth0Domain + "/")
+	issuerURL, err := url.Parse("https://" + auth0.Auth0Domain + "/")
 	if err != nil {
 		return nil, fmt.Errorf("Failed to parse the issuer url: %v", err)
 	}
@@ -36,7 +33,7 @@ func EnsureTokenIsValid() (Middleware, error) {
 		provider.KeyFunc,
 		validator.RS256,
 		issuerURL.String(),
-		[]string{auth0Audience},
+		[]string{auth0.Auth0Audience},
 		validator.WithCustomClaims(
 			func() validator.CustomClaims {
 				return &CustomClaims{}

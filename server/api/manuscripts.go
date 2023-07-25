@@ -147,6 +147,7 @@ func handleManuscriptState(w http.ResponseWriter, r *http.Request) *http.Request
 }
 
 func handleManuscriptsFuncs(
+	serveMux *http.ServeMux,
 	app application.Application,
 	usersHistory application.UsersHistory,
 	publicationsHistory application.PublicationsHistory,
@@ -250,5 +251,5 @@ func handleManuscriptsFuncs(
 			Handler: handleGetManuscriptsToReview,
 		},
 	}
-	router.HandleRoutes(routes)
+	router.HandleRoutes(serveMux, routes)
 }

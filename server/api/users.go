@@ -67,6 +67,7 @@ func handlePromoteToEditor(w http.ResponseWriter, r *http.Request) *http.Request
 }
 
 func handleUsersFuncs(
+	serveMux *http.ServeMux,
 	app application.Application,
 	userHistory application.UsersHistory,
 	jwtMiddleware middlewares.Middleware) {
@@ -99,5 +100,5 @@ func handleUsersFuncs(
 			Handler: handlePromoteToEditor,
 		},
 	}
-	router.HandleRoutes(routes)
+	router.HandleRoutes(serveMux, routes)
 }

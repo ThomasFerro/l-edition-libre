@@ -118,7 +118,7 @@ func customHandlerFunc(routes []Route) func(http.ResponseWriter, *http.Request) 
 	}
 }
 
-func HandleRoutes(routes []Route) {
+func HandleRoutes(serveMux *http.ServeMux, routes []Route) {
 	routesByPathName := make(map[string][]Route, 0)
 	for _, nextRoute := range routes {
 		nextRoutePath := nextRoute.pathUntilFirstParametrizedSegment()
@@ -134,6 +134,6 @@ func HandleRoutes(routes []Route) {
 		}
 	}
 	for path, routes := range routesByPathName {
-		http.HandleFunc(path, customHandlerFunc(routes))
+		serveMux.HandleFunc(path, customHandlerFunc(routes))
 	}
 }
