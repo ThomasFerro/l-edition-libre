@@ -5,7 +5,7 @@ import (
 
 	"github.com/ThomasFerro/l-edition-libre/api/helpers"
 	"github.com/ThomasFerro/l-edition-libre/application"
-	"github.com/ThomasFerro/l-edition-libre/commands"
+	"github.com/ThomasFerro/l-edition-libre/domain"
 )
 
 func OnlyAvailableForEditor(next HandlerFuncReturningRequest) HandlerFuncReturningRequest {
@@ -16,7 +16,7 @@ func OnlyAvailableForEditor(next HandlerFuncReturningRequest) HandlerFuncReturni
 			return r
 		}
 		if !isAnEditor {
-			helpers.ManageError(w, commands.ManuscriptNotFound{})
+			helpers.ManageError(w, domain.ManuscriptNotFound{})
 			return r
 		}
 		return next(w, r)

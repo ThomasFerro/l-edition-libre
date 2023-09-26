@@ -3,7 +3,7 @@ package helpers
 import (
 	"net/http"
 
-	"github.com/ThomasFerro/l-edition-libre/commands"
+	"github.com/ThomasFerro/l-edition-libre/domain"
 )
 
 type HttpErrorMessage struct {
@@ -12,13 +12,13 @@ type HttpErrorMessage struct {
 
 func ManageError(w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
-	typedCommandError, isCommandError := err.(commands.CommandError)
+	typedDomainError, isDomainError := err.(domain.DomainError)
 	errorMessage := HttpErrorMessage{
 		Error: err.Error(),
 	}
-	if isCommandError {
+	if isDomainError {
 		errorMessage = HttpErrorMessage{
-			Error: typedCommandError.Name(),
+			Error: typedDomainError.Name(),
 		}
 	}
 	WriteJson(w, errorMessage)

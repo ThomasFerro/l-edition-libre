@@ -5,7 +5,7 @@ import (
 
 	"github.com/ThomasFerro/l-edition-libre/api/helpers"
 	"github.com/ThomasFerro/l-edition-libre/application"
-	"github.com/ThomasFerro/l-edition-libre/commands"
+	"github.com/ThomasFerro/l-edition-libre/domain"
 )
 
 func UserShouldHaveAccessToManuscript(next HandlerFuncReturningRequest) HandlerFuncReturningRequest {
@@ -16,7 +16,7 @@ func UserShouldHaveAccessToManuscript(next HandlerFuncReturningRequest) HandlerF
 			return r
 		}
 		if !haveAccess {
-			helpers.ManageError(w, commands.ManuscriptNotFound{})
+			helpers.ManageError(w, domain.ManuscriptNotFound{})
 			return r
 		}
 		return next(w, r)

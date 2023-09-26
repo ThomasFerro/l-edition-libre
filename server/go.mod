@@ -5,7 +5,6 @@ go 1.20
 require github.com/auth0/go-jwt-middleware/v2 v2.1.0
 
 require (
-	github.com/golang-jwt/jwt/v5 v5.0.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/klauspost/compress v1.16.3 // indirect

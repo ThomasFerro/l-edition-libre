@@ -6,17 +6,18 @@ import (
 
 	"github.com/ThomasFerro/l-edition-libre/commands"
 	"github.com/ThomasFerro/l-edition-libre/contexts"
+	"github.com/ThomasFerro/l-edition-libre/domain"
 	"github.com/ThomasFerro/l-edition-libre/events"
 	"github.com/ThomasFerro/l-edition-libre/queries"
 	"golang.org/x/exp/slog"
 )
 
 type commandType string
-type commandHandler func(context.Context, commands.Command) ([]events.Event, commands.CommandError)
+type commandHandler func(context.Context, commands.Command) ([]events.Event, domain.DomainError)
 type ManagedCommands = map[commandType]commandHandler
 
 type eventType string
-type eventHandler func(context.Context, events.Event) (context.Context, []events.Event, commands.CommandError)
+type eventHandler func(context.Context, events.Event) (context.Context, []events.Event, domain.DomainError)
 type ManagedEvents = map[eventType]eventHandler
 
 type queryType string

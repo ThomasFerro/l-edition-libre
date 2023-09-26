@@ -2,10 +2,11 @@ package domain
 
 import (
 	"fmt"
+	"io"
 	"net/url"
 
 	"github.com/ThomasFerro/l-edition-libre/events"
-	"golang.org/x/exp/slog"
+	"github.com/ThomasFerro/l-edition-libre/ports"
 )
 
 type Manuscript struct {
@@ -23,40 +24,48 @@ const (
 	Reviewed      ManuscriptStatus = "Reviewed"
 )
 
-func (m Manuscript) applyManuscriptSubmitted(event events.ManuscriptSubmitted) Manuscript {
-	m.Title = event.Title
-	m.Author = event.Author
-	m.Status = PendingReview
-	m.FileURL = event.FileURL
-	return m
-}
-func (m Manuscript) applyManuscriptSubmissionCanceled(event events.ManuscriptSubmissionCanceled) Manuscript {
-	m.Status = Canceled
-	return m
-}
-func (m Manuscript) applyManuscriptReviewed(event events.ManuscriptReviewed) Manuscript {
-	m.Status = Reviewed
-	return m
-}
 func (m Manuscript) String() string {
 	return fmt.Sprintf("Manuscript{Title %v, Author %v, Status %v}", m.Title, m.Author, m.Status)
 }
 
-func RehydrateManuscript(history []events.Event) Manuscript {
-	manuscript := Manuscript{}
+func SubmitManuscript(filesSaver ports.FilesSaver, title string, author string, file io.Reader, fileName string) ([]events.Event, DomainError) {
+	fileURL, err := filesSaver.Save(file, fileName)
+	if err != nil {
+		return nil, UnableToPersistFile{
+			FileName:   fileName,
+			InnerError: err,
+		}
+	}
+	return []events.Event{
+		events.ManuscriptSubmitted{
+			Title:    title,
+			Author:   author,
+			FileName: fileName,
+			FileURL:  fileURL,
+		},
+	}, nil
+}
 
-	for _, nextEvent := range history {
-		switch typedEvent := nextEvent.(type) {
-		case events.ManuscriptSubmitted:
-			manuscript = manuscript.applyManuscriptSubmitted(typedEvent)
-		case events.ManuscriptSubmissionCanceled:
-			manuscript = manuscript.applyManuscriptSubmissionCanceled(typedEvent)
-		case events.ManuscriptReviewed:
-			manuscript = manuscript.applyManuscriptReviewed(typedEvent)
-		default:
-			slog.Warn("unknown manuscript event", "event", typedEvent)
+func (manuscript Manuscript) Cancel() ([]events.Event, DomainError) {
+	if manuscript.Status != PendingReview {
+		return nil, AManuscriptShouldBePendingReviewForItsSubmissionToBeCanceled{
+			actualStatus: manuscript.Status,
+		}
+	}
+	return []events.Event{
+		events.ManuscriptSubmissionCanceled{},
+	}, nil
+}
+
+func (manuscript Manuscript) Review() ([]events.Event, DomainError) {
+
+	if manuscript.Status != PendingReview {
+		return nil, AManuscriptShouldBePendingReviewToBeReviewed{
+			actualStatus: manuscript.Status,
 		}
 	}
 
-	return manuscript
+	return []events.Event{
+		events.ManuscriptReviewed{},
+	}, nil
 }

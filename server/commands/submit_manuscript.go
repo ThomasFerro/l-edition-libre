@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/ThomasFerro/l-edition-libre/contexts"
+	"github.com/ThomasFerro/l-edition-libre/domain"
 	"github.com/ThomasFerro/l-edition-libre/events"
 	"github.com/ThomasFerro/l-edition-libre/ports"
 )
@@ -17,39 +18,11 @@ type SubmitManuscript struct {
 	FileName string
 }
 
-type UnableToPersistFile struct {
-	FileName   string
-	InnerError error
-}
-
-func (commandError UnableToPersistFile) Error() string {
-	return commandError.InnerError.Error()
-}
-
-func (commandError UnableToPersistFile) Name() string {
-	return "UnableToPersistFile"
-}
-
-func HandleSubmitManuscript(ctx context.Context, command Command) ([]events.Event, CommandError) {
+func HandleSubmitManuscript(ctx context.Context, command Command) ([]events.Event, domain.DomainError) {
 	submitManuscript := command.(SubmitManuscript)
 
 	filesSaver := contexts.FromContext[ports.FilesSaver](ctx, contexts.FilesSaverContextKey{})
-
-	fileURL, err := filesSaver.Save(submitManuscript.File, submitManuscript.FileName)
-	if err != nil {
-		return nil, UnableToPersistFile{
-			FileName:   submitManuscript.FileName,
-			InnerError: err,
-		}
-	}
-	return []events.Event{
-		events.ManuscriptSubmitted{
-			Title:    submitManuscript.Title,
-			Author:   submitManuscript.Author,
-			FileName: submitManuscript.FileName,
-			FileURL:  fileURL,
-		},
-	}, nil
+	return domain.SubmitManuscript(filesSaver, submitManuscript.Title, submitManuscript.Author, submitManuscript.File, submitManuscript.FileName)
 }
 
 func (c SubmitManuscript) String() string {

@@ -8,33 +8,13 @@ import (
 	"github.com/ThomasFerro/l-edition-libre/events"
 )
 
-type ReviewManuscript struct {
-}
+type ReviewManuscript struct{}
 
-func HandleReviewManuscript(ctx context.Context, command Command) ([]events.Event, CommandError) {
+func HandleReviewManuscript(ctx context.Context, command Command) ([]events.Event, domain.DomainError) {
 	manuscript := rehydrateFromContext(ctx)
-	if manuscript.Status != domain.PendingReview {
-		return nil, AManuscriptShouldBePendingReviewToBeReviewed{
-			actualStatus: manuscript.Status,
-		}
-	}
-	return []events.Event{
-		events.ManuscriptReviewed{},
-	}, nil
+	return manuscript.Review()
 }
 
 func (c ReviewManuscript) String() string {
 	return fmt.Sprintf("ReviewManuscript{}")
-}
-
-type AManuscriptShouldBePendingReviewToBeReviewed struct {
-	actualStatus domain.ManuscriptStatus
-}
-
-func (commandError AManuscriptShouldBePendingReviewToBeReviewed) Error() string {
-	return fmt.Sprintf("manuscript should be pending review to be reviewed (%v)", commandError.actualStatus)
-}
-
-func (commandError AManuscriptShouldBePendingReviewToBeReviewed) Name() string {
-	return "AManuscriptShouldBePendingReviewToBeReviewed"
 }

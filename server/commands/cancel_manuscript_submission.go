@@ -10,30 +10,11 @@ import (
 
 type CancelManuscriptSubmission struct{}
 
-func HandleCancelManuscriptSubmission(ctx context.Context, command Command) ([]events.Event, CommandError) {
+func HandleCancelManuscriptSubmission(ctx context.Context, command Command) ([]events.Event, domain.DomainError) {
 	manuscript := rehydrateFromContext(ctx)
-	if manuscript.Status != domain.PendingReview {
-		return nil, AManuscriptShouldBePendingReviewForItsSubmissionToBeCanceled{
-			actualStatus: manuscript.Status,
-		}
-	}
-	return []events.Event{
-		events.ManuscriptSubmissionCanceled{},
-	}, nil
+	return manuscript.Cancel()
 }
 
 func (c CancelManuscriptSubmission) String() string {
 	return fmt.Sprintf("CancelManuscriptSubmission{}")
-}
-
-type AManuscriptShouldBePendingReviewForItsSubmissionToBeCanceled struct {
-	actualStatus domain.ManuscriptStatus
-}
-
-func (commandError AManuscriptShouldBePendingReviewForItsSubmissionToBeCanceled) Error() string {
-	return fmt.Sprintf("manuscript should be pending review for its subscription to be canceled (%v)", commandError.actualStatus)
-}
-
-func (commandError AManuscriptShouldBePendingReviewForItsSubmissionToBeCanceled) Name() string {
-	return "AManuscriptShouldBePendingReviewForItsSubmissionToBeCanceled"
 }
