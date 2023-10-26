@@ -122,6 +122,6 @@ func authentifyAs(ctx context.Context, displayedName string) (context.Context, e
 func AuthenticationSteps(ctx *godog.ScenarioContext) {
 	ctx.Step(`^I am an authentified editor$`, authentifyAsEditor)
 	ctx.Step(`^I authentify as an editor$`, authentifyAsEditor)
-	ctx.Step(`I am an authentified writer`, authentifyAsWriter)
-	ctx.Step(`I am authentified as another writer`, authentifyAsAnotherWriter)
+	ctx.Step(`^I am an authentified writer$`, authentifyAsWriter)
+	ctx.Step(`^I am authentified as another writer$`, authentifyAsAnotherWriter)
 }

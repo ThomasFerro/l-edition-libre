@@ -15,6 +15,9 @@ const (
 	MONGO_DATABASE_NAME     ConfigurationKey = "MONGO_DATABASE_NAME"
 	AUTH0_DOMAIN            ConfigurationKey = "AUTH0_DOMAIN"
 	AUTH0_AUDIENCE          ConfigurationKey = "AUTH0_AUDIENCE"
+	AUTH0_CLIENT_ID         ConfigurationKey = "AUTH0_CLIENT_ID"
+	AUTH0_CLIENT_SECRET     ConfigurationKey = "AUTH0_CLIENT_SECRET"
+	AUTH0_CALLBACK_URL      ConfigurationKey = "AUTH0_CALLBACK_URL"
 )
 
 var ConfigurationsWithFallback = map[ConfigurationKey]string{
@@ -24,6 +27,8 @@ var ConfigurationsWithFallback = map[ConfigurationKey]string{
 	MONGO_DATABASE_NAME:     "l-edition-libre",
 	AUTH0_DOMAIN:            "l-edition-libre.eu.auth0.com",
 	AUTH0_AUDIENCE:          "https://leditionlibre/api",
+	AUTH0_CLIENT_ID:         "xaUrOrVoyvMzgrEVPoNVO17eN4tCBOPR",
+	AUTH0_CALLBACK_URL:      "http://localhost:8080",
 }
 
 func GetConfiguration(configurationKey ConfigurationKey) string {

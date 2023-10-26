@@ -1,7 +1,10 @@
 package api
 
 import (
+	_ "embed"
 	"errors"
+	"fmt"
+	"html/template"
 	"net/http"
 
 	"github.com/ThomasFerro/l-edition-libre/api/helpers"
@@ -60,12 +63,15 @@ func Start(databaseName string) *http.Server {
 			slog.Error("unable to get jwt middleware", err)
 			return
 		}
+		authenticator := NewAuthenticator()
 
 		handleHealthCheckFuncs(serveMux, client)
 		handleDatabaseFuncs(serveMux, client)
+		handleIndexFuncs(serveMux)
 		handleManuscriptsFuncs(serveMux, app, usersHistory, publicationsHistory, manuscriptsHistory, filesSaver, jwtMiddleware)
 		handlePublicationsFuncs(serveMux, app, publicationsHistory, jwtMiddleware)
 		handleUsersFuncs(serveMux, app, usersHistory, jwtMiddleware)
+		handleAuthenticationFuncs(serveMux, app, authenticator, jwtMiddleware)
 
 		slog.Info("HTTP API start listening")
 		err = server.ListenAndServe()
@@ -74,6 +80,53 @@ func Start(databaseName string) *http.Server {
 		}
 	}()
 	return server
+}
+
+func handleIndexFuncs(serveMux *http.ServeMux) {
+	routes := []router.Route{
+		{
+			Path:    "/",
+			Method:  "GET",
+			Handler: handleIndex(),
+		},
+	}
+	router.HandleRoutes(serveMux, routes)
+}
+
+//go:embed html/index.go.html
+var index string
+
+type TemplateManuscriptDto struct {
+	Name string
+}
+type IndexParameters struct {
+	Manuscripts   []TemplateManuscriptDto
+	Authenticated bool
+}
+
+func handleIndex() func(w http.ResponseWriter, r *http.Request) *http.Request {
+	return func(w http.ResponseWriter, r *http.Request) *http.Request {
+		fmt.Printf("cookies ? %v", r.Cookies())
+		t, err := template.New("index").Parse(index)
+		if err != nil {
+			slog.Error("index template parsing error", err)
+			helpers.ManageError(w, err)
+			return r
+		}
+		err = t.Execute(w, IndexParameters{
+			Manuscripts: []TemplateManuscriptDto{
+				{
+					Name: "Test",
+				},
+			},
+		})
+		if err != nil {
+			slog.Error("index template execution error", err)
+			helpers.ManageError(w, err)
+			return r
+		}
+		return r
+	}
 }
 
 func handleHealthCheckFuncs(serveMux *http.ServeMux, client *mongodb.DatabaseClient) {
