@@ -105,7 +105,7 @@ func (route Route) handlerWithMiddlewaresApplied() http.HandlerFunc {
 func customHandlerFunc(routes []Route) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		for _, route := range routes {
-			requestUrl := r.URL.String()
+			requestUrl := r.URL.Path
 			if !route.matchRequest(requestUrl, r.Method) {
 				continue
 			}

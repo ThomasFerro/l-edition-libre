@@ -3,7 +3,6 @@ package api
 import (
 	_ "embed"
 	"errors"
-	"fmt"
 	"html/template"
 	"net/http"
 
@@ -63,7 +62,12 @@ func Start(databaseName string) *http.Server {
 			slog.Error("unable to get jwt middleware", err)
 			return
 		}
-		authenticator := NewAuthenticator()
+
+		authenticator, err := NewAuthenticator()
+		if err != nil {
+			slog.Error("unable to initiate authenticator", err)
+			return
+		}
 
 		handleHealthCheckFuncs(serveMux, client)
 		handleDatabaseFuncs(serveMux, client)
@@ -106,7 +110,6 @@ type IndexParameters struct {
 
 func handleIndex() func(w http.ResponseWriter, r *http.Request) *http.Request {
 	return func(w http.ResponseWriter, r *http.Request) *http.Request {
-		fmt.Printf("cookies ? %v", r.Cookies())
 		t, err := template.New("index").Parse(index)
 		if err != nil {
 			slog.Error("index template parsing error", err)

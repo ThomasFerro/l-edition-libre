@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -32,12 +34,21 @@ func generateRandomState() (string, error) {
 }
 
 type Authenticator struct {
-	*oicd.Provider
+	*oidc.Provider
 	oauth2.Config
 }
 
-func (a Authenticator) AuthCodeURL(state string) string {
-	return "TODO"
+func (a Authenticator) VerifyIDToken(ctx context.Context, token *oauth2.Token) (*oidc.IDToken, error) {
+	rawIDToken, ok := token.Extra("id_token").(string)
+	if !ok {
+		return nil, errors.New("no id_token field in oauth2 token")
+	}
+
+	oidcConfig := &oidc.Config{
+		ClientID: a.ClientID,
+	}
+
+	return a.Verifier(oidcConfig).Verify(ctx, rawIDToken)
 }
 
 func NewAuthenticator() (Authenticator, error) {
@@ -48,7 +59,7 @@ func NewAuthenticator() (Authenticator, error) {
 
 	provider, err := oidc.NewProvider(
 		context.Background(),
-		domainUrl,
+		domainUrl.String(),
 	)
 	if err != nil {
 		return Authenticator{}, err
@@ -59,7 +70,8 @@ func NewAuthenticator() (Authenticator, error) {
 		ClientSecret: auth0.Auth0ClientSecret,
 		RedirectURL:  auth0.Auth0CallbackURL,
 		Endpoint:     provider.Endpoint(),
-		Scopes:       []string{oidc.ScopeOpenID, "profile"},
+		// TODO: Quels scopes ?
+		Scopes: []string{oidc.ScopeOpenID, "profile"},
 	}
 
 	return Authenticator{
@@ -93,6 +105,73 @@ func handleLogin(authenticator Authenticator) func(http.ResponseWriter, *http.Re
 	}
 }
 
+func handleCallback(authenticator Authenticator) func(http.ResponseWriter, *http.Request) *http.Request {
+	return func(w http.ResponseWriter, r *http.Request) *http.Request {
+		cookieState, err := r.Cookie("state_cookie")
+		if err != nil {
+			slog.Error("unable to get state cookie", err)
+			helpers.ManageError(w, err)
+			return r
+		}
+		if cookieState.Value != r.URL.Query().Get("state") {
+			slog.Error("state mismatch")
+			helpers.ManageError(w, errors.New("state mismatch"))
+			return r
+		}
+
+		token, err := authenticator.Exchange(r.Context(), r.URL.Query().Get("code"))
+		if err != nil {
+			slog.Error("unable to echange code for an auth token", err)
+			helpers.ManageError(w, err)
+			return r
+		}
+
+		idToken, err := authenticator.VerifyIDToken(r.Context(), token)
+		if err != nil {
+			slog.Error("unable to verify id token", err)
+			helpers.ManageError(w, err)
+			return r
+		}
+
+		var profile map[string]interface{}
+		if err := idToken.Claims(&profile); err != nil {
+			slog.Error("unable to extract claims from id token", err)
+			helpers.ManageError(w, err)
+			return r
+		}
+		marshaledProfile, err := json.Marshal(profile)
+		if err != nil {
+			slog.Error("unable to marshal profile", err)
+			helpers.ManageError(w, err)
+			return r
+		}
+
+		accessTokenCookie := http.Cookie{
+			Name:     "access_token",
+			Path:     "/",
+			Value:    token.AccessToken,
+			MaxAge:   int(time.Hour.Seconds()),
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteLaxMode,
+		}
+		http.SetCookie(w, &accessTokenCookie)
+		profileCookie := http.Cookie{
+			Name:     "profile",
+			Path:     "/",
+			Value:    string(marshaledProfile),
+			MaxAge:   int(time.Hour.Seconds()),
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteLaxMode,
+		}
+		http.SetCookie(w, &profileCookie)
+		slog.Info("successfuly authenticated, redirecting to index")
+		http.Redirect(w, r, "/", http.StatusFound)
+		return r
+	}
+}
+
 func handleAuthenticationFuncs(
 	serveMux *http.ServeMux,
 	app application.Application,
@@ -103,6 +182,11 @@ func handleAuthenticationFuncs(
 			Path:    "/login",
 			Method:  "GET",
 			Handler: handleLogin(authenticator),
+		},
+		{
+			Path:    "/callback",
+			Method:  "GET",
+			Handler: handleCallback(authenticator),
 		},
 	}
 	router.HandleRoutes(serveMux, routes)
