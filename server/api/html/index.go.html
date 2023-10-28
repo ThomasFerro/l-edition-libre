@@ -8,21 +8,8 @@
 </head>
 
 <body>
-    {{ if not .Authenticated }}
     Non authentifié
     <a href="/login">Connexion</a>
-    {{ else }}
-    <ul id="manuscripts">
-        {{ range .Manuscripts }} <li class="manuscript">{{.Name}}</li> {{ end }}
-    </ul>
-    <form method="POST" action="/api/manuscripts" id="manuscript-submission" enctype="multipart/form-data"
-        hx-swap="afterbegin" hx-target="manuscripts">
-        <input type="text" name="author">
-        <input type="text" name="title">
-        <input type="file">
-        <button type="submit">Submit</button>
-    </form>
-    {{ end }}
     <!-- TODO: Embed htmx -->
     <script src="https://unpkg.com/htmx.org@1.9.6"></script>
 </body>

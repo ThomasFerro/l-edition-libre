@@ -80,6 +80,20 @@ func NewAuthenticator() (Authenticator, error) {
 	}, nil
 }
 
+const STATE_COOKIE_NAME = "state_cookie"
+
+func isAuthenticated(r *http.Request) (bool, error) {
+	// TODO: Un appel pour vérifier si le token est ok ?
+	stateCookie, err := r.Cookie(STATE_COOKIE_NAME)
+	if errors.Is(err, http.ErrNoCookie) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return stateCookie.Value != "", nil
+}
+
 func handleLogin(authenticator Authenticator) func(http.ResponseWriter, *http.Request) *http.Request {
 	return func(w http.ResponseWriter, r *http.Request) *http.Request {
 		state, err := generateRandomState()
@@ -90,7 +104,7 @@ func handleLogin(authenticator Authenticator) func(http.ResponseWriter, *http.Re
 		}
 
 		stateCookie := http.Cookie{
-			Name:     "state_cookie",
+			Name:     STATE_COOKIE_NAME,
 			Path:     "/",
 			Value:    state,
 			MaxAge:   int(time.Hour.Seconds()),

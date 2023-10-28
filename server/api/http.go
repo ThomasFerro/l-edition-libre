@@ -1,14 +1,9 @@
 package api
 
 import (
-	_ "embed"
-	"errors"
-	"html/template"
 	"net/http"
 
-	"github.com/ThomasFerro/l-edition-libre/api/helpers"
 	"github.com/ThomasFerro/l-edition-libre/api/middlewares"
-	"github.com/ThomasFerro/l-edition-libre/api/router"
 	"github.com/ThomasFerro/l-edition-libre/application"
 	"github.com/ThomasFerro/l-edition-libre/commands"
 	"github.com/ThomasFerro/l-edition-libre/configuration"
@@ -84,105 +79,4 @@ func Start(databaseName string) *http.Server {
 		}
 	}()
 	return server
-}
-
-func handleIndexFuncs(serveMux *http.ServeMux) {
-	routes := []router.Route{
-		{
-			Path:    "/",
-			Method:  "GET",
-			Handler: handleIndex(),
-		},
-	}
-	router.HandleRoutes(serveMux, routes)
-}
-
-//go:embed html/index.go.html
-var index string
-
-type TemplateManuscriptDto struct {
-	Name string
-}
-type IndexParameters struct {
-	Manuscripts   []TemplateManuscriptDto
-	Authenticated bool
-}
-
-func handleIndex() func(w http.ResponseWriter, r *http.Request) *http.Request {
-	return func(w http.ResponseWriter, r *http.Request) *http.Request {
-		t, err := template.New("index").Parse(index)
-		if err != nil {
-			slog.Error("index template parsing error", err)
-			helpers.ManageError(w, err)
-			return r
-		}
-		err = t.Execute(w, IndexParameters{
-			Manuscripts: []TemplateManuscriptDto{
-				{
-					Name: "Test",
-				},
-			},
-		})
-		if err != nil {
-			slog.Error("index template execution error", err)
-			helpers.ManageError(w, err)
-			return r
-		}
-		return r
-	}
-}
-
-func handleHealthCheckFuncs(serveMux *http.ServeMux, client *mongodb.DatabaseClient) {
-	routes := []router.Route{
-		{
-			Path:    "/api/ready",
-			Method:  "GET",
-			Handler: handleApiIsReady(client),
-		},
-	}
-	router.HandleRoutes(serveMux, routes)
-}
-
-func handleApiIsReady(client *mongodb.DatabaseClient) func(w http.ResponseWriter, r *http.Request) *http.Request {
-	return func(w http.ResponseWriter, r *http.Request) *http.Request {
-		slog.Info("check api readiness")
-		err := client.HealthCheck()
-		if err != nil {
-			slog.Error("unhealthy database client", err)
-			helpers.ManageError(w, errors.New("unhealthy database client"))
-			return r
-		}
-
-		w.Write([]byte("ok"))
-		return r
-	}
-}
-
-func handleDatabaseFuncs(serveMux *http.ServeMux, client *mongodb.DatabaseClient) {
-	routes := []router.Route{
-		{
-			Path:    "/api/init",
-			Method:  "POST",
-			Handler: handleInitDatabase(client),
-			Middlewares: []middlewares.Middleware{
-				middlewares.RequiresAdminApiKey,
-			},
-		},
-	}
-	router.HandleRoutes(serveMux, routes)
-}
-
-func handleInitDatabase(client *mongodb.DatabaseClient) func(w http.ResponseWriter, r *http.Request) *http.Request {
-	return func(w http.ResponseWriter, r *http.Request) *http.Request {
-		slog.Info("initialize database")
-		err := client.InitDatabase()
-		if err != nil {
-			slog.Error("unable to initialize database", err)
-			helpers.ManageError(w, err)
-			return r
-		}
-
-		w.Write([]byte("ok"))
-		return r
-	}
 }
