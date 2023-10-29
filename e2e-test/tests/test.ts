@@ -1,7 +1,7 @@
 import { Page, test as base, expect } from "@playwright/test";
 
 class Given {
-    IAmAnAuthentifiedWriter() { }
+    IAmAnAuthenticatedWriter() { }
 };
 class When {
     constructor(private readonly options: { baseURL }) { }

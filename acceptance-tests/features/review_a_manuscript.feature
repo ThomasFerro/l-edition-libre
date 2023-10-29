@@ -20,7 +20,7 @@ Feature: Review a manusript
 
   Scenario: Review a manuscript
     Given a writer submitted a manuscript for "My first novel"
-    And I am an authentified editor
+    And I am an authenticated editor
     When I review positively the manuscript for "My first novel"
     Then "My first novel" is eventually published
 
@@ -28,13 +28,13 @@ Feature: Review a manusript
   Scenario: Only manuscripts pending review can be reviewed
     Given a writer submitted a manuscript for "My first novel"
     And submission of "My first novel" was canceled
-    And I am an authentified editor
+    And I am an authenticated editor
     When I review positively the manuscript for "My first novel"
     Then the error "AManuscriptShouldBePendingReviewToBeReviewed" is thrown
 
   @Error
   Scenario: Manuscripts can only be reviewed by an editor
-    Given I am an authentified writer
+    Given I am an authenticated writer
     And I submitted a manuscript for "My first novel"
     When I review positively the manuscript for "My first novel"
     Then the error "ManuscriptNotFound" is thrown

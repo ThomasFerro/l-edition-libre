@@ -30,7 +30,7 @@ func theWriterSubmittedAManuscript(ctx context.Context, writerName string, manus
 
 func sumbitManuscript(ctx context.Context, manuscriptName string) (context.Context, error) {
 	var newManuscript api.SubmitManuscriptResponseDto
-	ctx, authentifiedUserName := helpers.GetAuthentifiedUserName(ctx)
+	ctx, authenticatedUserName := helpers.GetAuthenticatedUserName(ctx)
 	ctx, token := helpers.GetUserToken(ctx)
 	ctx, err := helpers.PostFile(
 		ctx,
@@ -42,7 +42,7 @@ func sumbitManuscript(ctx context.Context, manuscriptName string) (context.Conte
 		"./assets/test.pdf",
 		map[string]string{
 			"title":  manuscriptName,
-			"author": authentifiedUserName,
+			"author": authenticatedUserName,
 		},
 	)
 	if err != nil {

@@ -116,12 +116,12 @@ func authentifyAs(ctx context.Context, displayedName string) (context.Context, e
 	newUserID := application.UserID(newUser.Id)
 	ctx = helpers.SetUserName(ctx, newUserID, displayedName)
 	ctx = helpers.SetToken(ctx, newUserID, token)
-	return helpers.SetAuthentifiedUserID(ctx, newUserID), nil
+	return helpers.SetAuthenticatedUserID(ctx, newUserID), nil
 }
 
 func AuthenticationSteps(ctx *godog.ScenarioContext) {
-	ctx.Step(`^I am an authentified editor$`, authentifyAsEditor)
+	ctx.Step(`^I am an authenticated editor$`, authentifyAsEditor)
 	ctx.Step(`^I authentify as an editor$`, authentifyAsEditor)
-	ctx.Step(`^I am an authentified writer$`, authentifyAsWriter)
-	ctx.Step(`^I am authentified as another writer$`, authentifyAsAnotherWriter)
+	ctx.Step(`^I am an authenticated writer$`, authentifyAsWriter)
+	ctx.Step(`^I am authenticated as another writer$`, authentifyAsAnotherWriter)
 }

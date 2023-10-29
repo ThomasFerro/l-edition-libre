@@ -1,3 +1,4 @@
+{{ define "index" }}
 <!DOCTYPE html>
 <html lang="fr">
 
@@ -8,10 +9,10 @@
 </head>
 
 <body>
-    Non authentifié
-    <a href="/login">Connexion</a>
+    {{ template "authentication" .Authenticated }}
     <!-- TODO: Embed htmx -->
     <script src="https://unpkg.com/htmx.org@1.9.6"></script>
 </body>
 
 </html>
+{{ end }}

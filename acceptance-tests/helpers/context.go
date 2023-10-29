@@ -9,24 +9,24 @@ import (
 type ErrorKey struct{}
 type TagsKey struct{}
 
-type AuthentifiedUserToken struct{}
+type AuthenticatedUserToken struct{}
 
-func SetAuthentifiedUserToken(ctx context.Context, token string) context.Context {
-	return context.WithValue(ctx, AuthentifiedUserToken{}, token)
+func SetAuthenticatedUserToken(ctx context.Context, token string) context.Context {
+	return context.WithValue(ctx, AuthenticatedUserToken{}, token)
 }
 
-func GetAuthentifiedUserToken(ctx context.Context) string {
-	return ctx.Value(AuthentifiedUserToken{}).(string)
+func GetAuthenticatedUserToken(ctx context.Context) string {
+	return ctx.Value(AuthenticatedUserToken{}).(string)
 }
 
-type AuthentifiedUser struct{}
+type AuthenticatedUser struct{}
 
-func SetAuthentifiedUserID(ctx context.Context, userID application.UserID) context.Context {
-	return context.WithValue(ctx, AuthentifiedUser{}, userID)
+func SetAuthenticatedUserID(ctx context.Context, userID application.UserID) context.Context {
+	return context.WithValue(ctx, AuthenticatedUser{}, userID)
 }
 
-func GetAuthentifiedUserID(ctx context.Context) application.UserID {
-	value := ctx.Value(AuthentifiedUser{})
+func GetAuthenticatedUserID(ctx context.Context) application.UserID {
+	value := ctx.Value(AuthenticatedUser{})
 	if value == nil {
 		return ""
 	}
@@ -45,8 +45,8 @@ func getOrCreateUserNameByIDFromContext(ctx context.Context) (context.Context, U
 	return context.WithValue(ctx, UserNameByIDKey{}, newMap), newMap, nil
 }
 
-func GetAuthentifiedUserName(ctx context.Context) (context.Context, string) {
-	userID := GetAuthentifiedUserID(ctx)
+func GetAuthenticatedUserName(ctx context.Context) (context.Context, string) {
+	userID := GetAuthenticatedUserID(ctx)
 	ctx, userNameByID, err := getOrCreateUserNameByIDFromContext(ctx)
 	if err != nil {
 		panic(err)
@@ -78,7 +78,7 @@ func getOrCreateTokenByIDFromContext(ctx context.Context) (context.Context, Toke
 }
 
 func GetUserToken(ctx context.Context) (context.Context, string) {
-	userID := GetAuthentifiedUserID(ctx)
+	userID := GetAuthenticatedUserID(ctx)
 	ctx, tokenByUserID, err := getOrCreateTokenByIDFromContext(ctx)
 	if err != nil {
 		panic(err)
