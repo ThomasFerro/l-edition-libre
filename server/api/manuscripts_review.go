@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/ThomasFerro/l-edition-libre/api/helpers"
+	"github.com/ThomasFerro/l-edition-libre/api/html"
 	"github.com/ThomasFerro/l-edition-libre/api/middlewares"
 	"github.com/ThomasFerro/l-edition-libre/commands"
 	"github.com/ThomasFerro/l-edition-libre/domain"
@@ -64,6 +65,5 @@ func handleGetManuscriptsToReview(w http.ResponseWriter, r *http.Request) *http.
 		return r
 	}
 
-	helpers.WriteJson(w, fromDomain(manuscripts))
-	return r
+	return html.RespondWithTemplate(w, r, fromDomain(manuscripts), "manuscripts-review.gohtml")
 }

@@ -1,6 +1,8 @@
 {{ define "authentication" }}
 {{ if not .}}
 Non authentifié
-<a href="/login">Connexion</a>
+<a data-test="Go to connection page" href="/login">Connexion</a>
+{{ else }}
+<a data-test="Disconnect" href="/logout">Déconnexion</a>
 {{ end }}
 {{ end }}

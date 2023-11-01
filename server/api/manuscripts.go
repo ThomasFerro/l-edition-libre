@@ -236,7 +236,7 @@ func handleManuscriptsFuncs(
 			Handler: handleManuscriptReviewSubmission,
 		},
 		{
-			Path:   "/api/manuscripts/to-review",
+			Path:   "/manuscripts/to-review",
 			Method: "GET",
 			Middlewares: []middlewares.Middleware{
 				middlewares.OnlyAvailableForEditor,
@@ -246,7 +246,8 @@ func handleManuscriptsFuncs(
 				middlewares.InjectManuscriptsHistory(manuscriptsHistory),
 				middlewares.InjectUsersHistory(usersHistory),
 				middlewares.InjectApplication(app),
-				jwtMiddleware,
+				// TODO: Refaire le jwtMiddleware en se basant sur un appel à /userinfo ? (déjà fait dans extract user id mais rien ne force à l'utiliser)
+				//jwtMiddleware,
 			},
 			Handler: handleGetManuscriptsToReview,
 		},

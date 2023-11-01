@@ -118,8 +118,71 @@ func handleLogin(authenticator Authenticator) func(http.ResponseWriter, *http.Re
 		return r
 	}
 }
+func handleLogout(w http.ResponseWriter, r *http.Request) *http.Request {
+	logoutUrl, err := url.Parse("https://" + auth0.Auth0Domain + "/v2/logout")
+	if err != nil {
+		slog.Error("unable to parse logout url", err)
+		helpers.ManageError(w, err)
+		return r
+	}
 
-func handleCallback(authenticator Authenticator) func(http.ResponseWriter, *http.Request) *http.Request {
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+
+	returnTo, err := url.Parse(scheme + "://" + r.Host + "/logout-callback")
+	if err != nil {
+		slog.Error("unable to parse callback url", err)
+		helpers.ManageError(w, err)
+		return r
+	}
+
+	parameters := url.Values{}
+	parameters.Add("returnTo", returnTo.String())
+	parameters.Add("client_id", auth0.Auth0ClientId)
+	logoutUrl.RawQuery = parameters.Encode()
+
+	http.Redirect(w, r, logoutUrl.String(), http.StatusTemporaryRedirect)
+	return r
+}
+
+func handleLogoutCallback(w http.ResponseWriter, r *http.Request) *http.Request {
+	stateTokenCookie := http.Cookie{
+		Name:     "state_cookie",
+		Path:     "/",
+		Value:    "",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	}
+	http.SetCookie(w, &stateTokenCookie)
+	accessTokenCookie := http.Cookie{
+		Name:     "access_token",
+		Path:     "/",
+		Value:    "",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	}
+	http.SetCookie(w, &accessTokenCookie)
+	profileCookie := http.Cookie{
+		Name:     "profile",
+		Path:     "/",
+		Value:    "",
+		MaxAge:   -1,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
+	}
+	http.SetCookie(w, &profileCookie)
+	http.Redirect(w, r, "/", http.StatusFound)
+	return r
+}
+
+func handleLoginCallback(authenticator Authenticator) func(http.ResponseWriter, *http.Request) *http.Request {
 	return func(w http.ResponseWriter, r *http.Request) *http.Request {
 		cookieState, err := r.Cookie("state_cookie")
 		if err != nil {
@@ -200,7 +263,17 @@ func handleAuthenticationFuncs(
 		{
 			Path:    "/callback",
 			Method:  "GET",
-			Handler: handleCallback(authenticator),
+			Handler: handleLoginCallback(authenticator),
+		},
+		{
+			Path:    "/logout-callback",
+			Method:  "GET",
+			Handler: handleLogoutCallback,
+		},
+		{
+			Path:    "/logout",
+			Method:  "GET",
+			Handler: handleLogout,
 		},
 	}
 	router.HandleRoutes(serveMux, routes)

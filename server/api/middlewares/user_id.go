@@ -2,9 +2,7 @@ package middlewares
 
 import (
 	"context"
-	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/ThomasFerro/l-edition-libre/api/helpers/auth0"
 	"github.com/ThomasFerro/l-edition-libre/application"
@@ -26,7 +24,7 @@ func UserIdFromRequest(r *http.Request) application.UserID {
 
 func ExtractUserID(next HandlerFuncReturningRequest) HandlerFuncReturningRequest {
 	return func(w http.ResponseWriter, r *http.Request) *http.Request {
-		userId, err := extractUserIDFromJwt(r)
+		userId, err := extractUserIDFromCookie(r)
 		if err != nil {
 			slog.Warn("Unable to extract user id: %v", err)
 			http.Error(w, "Unable to extract user id", http.StatusBadRequest)
@@ -42,20 +40,11 @@ func ExtractUserID(next HandlerFuncReturningRequest) HandlerFuncReturningRequest
 	}
 }
 
-func extractUserIDFromJwt(r *http.Request) (application.UserID, error) {
-	token, err := extractBearerToken(r.Header)
+func extractUserIDFromCookie(r *http.Request) (application.UserID, error) {
+	cookie, err := r.Cookie("access_token")
 	if err != nil {
 		return "", err
 	}
 
-	return auth0.ExtractUserID(token)
-}
-
-func extractBearerToken(header http.Header) (string, error) {
-	authorizationHeader := header.Get("Authorization")
-	split := strings.Split(authorizationHeader, "Bearer ")
-	if len(split) != 2 {
-		return "", errors.New("Unable to extract bearer")
-	}
-	return split[1], nil
+	return auth0.ExtractUserID(cookie.Value)
 }

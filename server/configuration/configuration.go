@@ -18,6 +18,7 @@ const (
 	AUTH0_CLIENT_ID         ConfigurationKey = "AUTH0_CLIENT_ID"
 	AUTH0_CLIENT_SECRET     ConfigurationKey = "AUTH0_CLIENT_SECRET"
 	AUTH0_CALLBACK_URL      ConfigurationKey = "AUTH0_CALLBACK_URL"
+	AUTH0_USERINFO_URL      ConfigurationKey = "AUTH0_USERINFO_URL"
 )
 
 var ConfigurationsWithFallback = map[ConfigurationKey]string{
@@ -29,6 +30,7 @@ var ConfigurationsWithFallback = map[ConfigurationKey]string{
 	AUTH0_AUDIENCE:          "https://leditionlibre/api",
 	AUTH0_CLIENT_ID:         "xaUrOrVoyvMzgrEVPoNVO17eN4tCBOPR",
 	AUTH0_CALLBACK_URL:      "http://localhost:8080/callback",
+	AUTH0_USERINFO_URL:      "https://l-edition-libre.eu.auth0.com/userinfo",
 }
 
 func GetConfiguration(configurationKey ConfigurationKey) string {

@@ -1,8 +1,10 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/ThomasFerro/l-edition-libre/api/helpers"
 	"github.com/ThomasFerro/l-edition-libre/api/middlewares"
@@ -53,6 +55,11 @@ func handleAccountCreation(w http.ResponseWriter, r *http.Request) *http.Request
 func handlePromoteToEditor(w http.ResponseWriter, r *http.Request) *http.Request {
 	slog.Info("receiving promotion to editor request")
 
+	// TODO: Plus proprement, via un middleware qui recup le param de l'url
+	splitUrl := strings.Split(r.URL.Path, "/")
+	userId := splitUrl[len(splitUrl)-1]
+	r = r.WithContext(context.WithValue(r.Context(), contexts.UserIDContextKey{}, application.UserID(userId)))
+
 	app := middlewares.ApplicationFromRequest(r)
 	ctx, err := app.SendCommand(r.Context(), commands.PromoteUserToEditor{})
 	if err != nil {
@@ -93,9 +100,7 @@ func handleUsersFuncs(
 				middlewares.RequiresAdminApiKey,
 				middlewares.InjectContextualizedUserHistory,
 				middlewares.InjectUsersHistory(userHistory),
-				middlewares.ExtractUserID,
 				middlewares.InjectApplication(app),
-				jwtMiddleware,
 			},
 			Handler: handlePromoteToEditor,
 		},

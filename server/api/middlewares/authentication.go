@@ -28,7 +28,6 @@ func EnsureTokenIsValid() (Middleware, error) {
 	}
 
 	provider := jwks.NewCachingProvider(issuerURL, 5*time.Minute)
-
 	jwtValidator, err := validator.New(
 		provider.KeyFunc,
 		validator.RS256,
@@ -48,6 +47,7 @@ func EnsureTokenIsValid() (Middleware, error) {
 	errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
 		slog.Error("Encountered error while validating JWT", err)
 
+		// TODO: Remplacer par une déco + redirection sur l'index en indiquant qu'il faut s'authentifier à nouveau ?
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte(`{"message":"Failed to validate JWT."}`))
