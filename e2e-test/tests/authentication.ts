@@ -18,8 +18,11 @@ export class Authentication {
             await disconnectButton.click()
         }
         await this.page.locator('[data-test="Go to connection page"]').click()
+        
+
         await this.page.locator("#username").fill(login)
         await this.page.locator("#password").fill(password)
-        await this.page.keyboard.press("Enter")
+        await this.page.keyboard.press("Enter");
+        await this.page.waitForSelector('[data-test="Disconnect"]')
     }
 }

@@ -33,7 +33,7 @@ func handleIndex() func(w http.ResponseWriter, r *http.Request) *http.Request {
 			return r
 		}
 
-		return html.RespondWithTemplate(w, r, IndexParameters{
+		return html.RespondWithIndexTemplate(w, r, IndexParameters{
 			Authenticated: isCurrentlyAuthenticated,
 		}, "index.gohtml")
 	}

@@ -15,7 +15,7 @@ import (
 //go:embed *.gohtml
 var templates embed.FS
 
-func RespondWithTemplate(w http.ResponseWriter, r *http.Request, data interface{}, specificFiles ...string) *http.Request {
+func RespondWithIndexTemplate(w http.ResponseWriter, r *http.Request, data interface{}, specificFiles ...string) *http.Request {
 	files := []string{
 		"layout.gohtml",
 		"authentication.gohtml",
@@ -23,15 +23,18 @@ func RespondWithTemplate(w http.ResponseWriter, r *http.Request, data interface{
 	for _, specificFile := range specificFiles {
 		files = append(files, specificFile)
 	}
+	return RespondWithTemplate(w, r, data, "layout", files...)
+}
 
-	t, err := template.New("index").ParseFS(templates, files...)
+func RespondWithTemplate(w http.ResponseWriter, r *http.Request, data interface{}, templateName string, files ...string) *http.Request {
+	t, err := template.New("").ParseFS(templates, files...)
 	if err != nil {
 		slog.Error("template parsing error", err)
 		helpers.ManageError(w, err)
 		return r
 	}
 
-	err = t.ExecuteTemplate(w, "layout", data)
+	err = t.ExecuteTemplate(w, templateName, data)
 	if err != nil {
 		slog.Error("template execution error", err)
 		helpers.ManageError(w, err)

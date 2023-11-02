@@ -29,7 +29,7 @@ var ConfigurationsWithFallback = map[ConfigurationKey]string{
 	AUTH0_DOMAIN:            "l-edition-libre.eu.auth0.com",
 	AUTH0_AUDIENCE:          "https://leditionlibre/api",
 	AUTH0_CLIENT_ID:         "xaUrOrVoyvMzgrEVPoNVO17eN4tCBOPR",
-	AUTH0_CALLBACK_URL:      "http://localhost:8080/callback",
+	AUTH0_CALLBACK_URL:      "http://127.0.0.1:8080/callback",
 	AUTH0_USERINFO_URL:      "https://l-edition-libre.eu.auth0.com/userinfo",
 }
 

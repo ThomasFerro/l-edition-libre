@@ -32,12 +32,14 @@ type ManuscriptToReviewDto struct {
 }
 
 type ManuscriptsToReviewDto struct {
-	Manuscripts []ManuscriptToReviewDto `json:"manuscripts"`
+	Manuscripts   []ManuscriptToReviewDto `json:"manuscripts"`
+	Authenticated bool
 }
 
 func fromDomain(manuscripts []domain.Manuscript) ManuscriptsToReviewDto {
 	dto := ManuscriptsToReviewDto{
-		Manuscripts: make([]ManuscriptToReviewDto, 0),
+		Authenticated: true,
+		Manuscripts:   make([]ManuscriptToReviewDto, 0),
 	}
 
 	for _, manuscript := range manuscripts {
@@ -65,5 +67,5 @@ func handleGetManuscriptsToReview(w http.ResponseWriter, r *http.Request) *http.
 		return r
 	}
 
-	return html.RespondWithTemplate(w, r, fromDomain(manuscripts), "manuscripts-review.gohtml")
+	return html.RespondWithIndexTemplate(w, r, fromDomain(manuscripts), "manuscripts-review.gohtml")
 }

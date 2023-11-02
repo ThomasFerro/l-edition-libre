@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"github.com/ThomasFerro/l-edition-libre/api/helpers"
+	"github.com/ThomasFerro/l-edition-libre/api/html"
 	"github.com/ThomasFerro/l-edition-libre/api/middlewares"
 	"github.com/ThomasFerro/l-edition-libre/api/router"
 	"github.com/ThomasFerro/l-edition-libre/application"
@@ -21,7 +22,8 @@ type WriterManuscriptDto struct {
 	Title string `json:"title"`
 }
 type WriterManuscriptsDto struct {
-	Manuscripts []WriterManuscriptDto `json:"manuscripts"`
+	Authenticated bool
+	Manuscripts   []WriterManuscriptDto
 }
 
 func handleGetManuscripts(w http.ResponseWriter, r *http.Request) *http.Request {
@@ -41,15 +43,16 @@ func handleGetManuscripts(w http.ResponseWriter, r *http.Request) *http.Request 
 	}
 
 	dto := WriterManuscriptsDto{
-		Manuscripts: []WriterManuscriptDto{},
+		Manuscripts:   []WriterManuscriptDto{},
+		Authenticated: true,
 	}
 	for _, manuscript := range manuscripts {
 		dto.Manuscripts = append(dto.Manuscripts, WriterManuscriptDto{
 			Title: manuscript.Title,
 		})
 	}
-	helpers.WriteJson(w, dto)
-	return r
+
+	return html.RespondWithIndexTemplate(w, r, dto, "manuscripts.gohtml", "manuscript-item.gohtml")
 }
 
 type SubmitManuscriptRequestDto struct {
@@ -57,10 +60,6 @@ type SubmitManuscriptRequestDto struct {
 	Author   string
 	File     io.Reader
 	FileName string
-}
-
-type SubmitManuscriptResponseDto struct {
-	Id string `json:"id"`
 }
 
 func handleManuscriptCreation(w http.ResponseWriter, r *http.Request) *http.Request {
@@ -83,9 +82,10 @@ func handleManuscriptCreation(w http.ResponseWriter, r *http.Request) *http.Requ
 	app := middlewares.ApplicationFromRequest(r)
 
 	ctx, err := app.SendCommand(r.Context(), commands.SubmitManuscript{
-		Title:    dto.Title,
-		Author:   dto.Author,
-		File:     dto.File,
+		Title:  dto.Title,
+		Author: dto.Author,
+		File:   dto.File,
+		// FIXME: jamais utilisé ??
 		FileName: dto.FileName,
 	})
 	if err != nil {
@@ -95,10 +95,10 @@ func handleManuscriptCreation(w http.ResponseWriter, r *http.Request) *http.Requ
 	}
 	r = r.WithContext(ctx)
 	slog.Info("manuscript created", "manuscript_id", newManuscriptID.String())
-	helpers.WriteJson(w, SubmitManuscriptResponseDto{
-		Id: newManuscriptID.String(),
-	})
-	return r
+
+	return html.RespondWithTemplate(w, r, WriterManuscriptDto{
+		Title: dto.Title,
+	}, "manuscript-item", "manuscript-item.gohtml")
 }
 
 type ManuscriptDto struct {
@@ -167,12 +167,12 @@ func handleManuscriptsFuncs(
 				middlewares.InjectManuscriptsHistory(manuscriptsHistory),
 				middlewares.InjectUsersHistory(usersHistory),
 				middlewares.InjectApplication(app),
-				jwtMiddleware,
+				//jwtMiddleware,
 			},
 			Handler: handleManuscriptCreation,
 		},
 		{
-			Path:   "/api/manuscripts",
+			Path:   "/manuscripts",
 			Method: "GET",
 			Middlewares: []middlewares.Middleware{
 				middlewares.InjectContextualizedManuscriptsHistory,
@@ -180,7 +180,7 @@ func handleManuscriptsFuncs(
 				middlewares.InjectManuscriptsHistory(manuscriptsHistory),
 				middlewares.InjectUsersHistory(usersHistory),
 				middlewares.InjectApplication(app),
-				jwtMiddleware,
+				//jwtMiddleware,
 			},
 			Handler: handleGetManuscripts,
 		},

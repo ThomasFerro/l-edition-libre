@@ -1,5 +1,6 @@
 import { Page, test as base, expect } from "@playwright/test";
 import { Authentication } from "./authentication";
+import { Manuscripts } from "./manuscripts";
 
 // TODO: Voir comment séparer les steps par domain proprement
 class Given {
@@ -9,28 +10,46 @@ class Given {
         await this.authentication.authenticateAsWriter();
     }
 };
-class When {
-    constructor(private readonly options: { baseURL }) { }
 
-    ISubmitAManuscriptFor(manuscriptName: string) { console.log(this.options) }
+class When {
+    constructor(private readonly page: Page, private readonly manuscripts: Manuscripts) { }
+
+    async ISubmitAManuscriptFor(manuscriptName: string) {
+        await this.page.goto("/manuscripts")
+        await this.page.locator('[data-test-new-manuscript-field="title"]').fill(this.manuscripts.get(manuscriptName));
+        await this.page.locator('[data-test="Submit new manuscript"]').click()
+    }
 }
+
 class Then {
-    constructor(private readonly page: Page, private readonly authentication: Authentication) { }
+    constructor(private readonly page: Page, private readonly authentication: Authentication, private readonly manuscripts: Manuscripts) { }
     async TheFollowingManuscriptIsPendingReviewFromTheEditor(manuscriptName: string) {
-        await this.authentication.authenticateAsEditor();
-        await this.page.goto("/manuscripts/to-review")
-        const manuscript = this.page.locator('.manuscript', { hasText: manuscriptName })
+        await this.page.goto("/manuscripts");
+        const manuscript = this.page.locator('.manuscript', { hasText: this.manuscripts.get(manuscriptName) })
         await expect(manuscript).toBeVisible()
+        await expect(manuscript.locator('[data-test-manuscript-status="pending review"]')).toBeVisible()
+        // TODO: Cette step = l'action de faire une review
+        /*
+        await this.authentication.authenticateAsEditor();
+        await this.page.goto("/manuscripts/to-review");
+        const manuscript = this.page.locator('.manuscript', { hasText: this.manuscripts.get(manuscriptName) })
+        await expect(manuscript).toBeVisible()
+        */
     }
 }
 
 export const test = base.extend<{
     Authentication: Authentication,
+    Manuscripts: Manuscripts,
     Given: Given,
     When: When,
     Then: Then
 }>({
-    Authentication: async ({page}, use ) => {
+    Manuscripts: async ({}, use) => {
+        const manuscripts = new Manuscripts();
+        await use(manuscripts)
+    },
+    Authentication: async ({ page }, use) => {
         const authentication = new Authentication(page);
         await use(authentication);
     },
@@ -38,12 +57,12 @@ export const test = base.extend<{
         const given = new Given(Authentication);
         await use(given);
     },
-    When: async ({ page, baseURL }, use) => {
-        const when = new When({ baseURL });
+    When: async ({ page, Manuscripts }, use) => {
+        const when = new When(page, Manuscripts);
         await use(when);
     },
-    Then: async ({ page, Authentication }, use) => {
-        const then = new Then(page, Authentication);
+    Then: async ({ page, Authentication, Manuscripts }, use) => {
+        const then = new Then(page, Authentication, Manuscripts);
         await use(then);
     },
 }) 

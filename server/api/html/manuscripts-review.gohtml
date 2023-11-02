@@ -1,2 +1,6 @@
 {{ define "title" }}Revue des manuscrits{{end}}
-{{ define "content" }}TODO{{ end }}
+{{ define "content" }}
+<ul>
+{{ range .Manuscripts }}<li> {{ . }} </li> {{ end }}
+</ul>
+{{ end }}

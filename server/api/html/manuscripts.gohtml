@@ -1,0 +1,12 @@
+{{ define "title" }}Manuscrits{{end}}
+{{ define "content" }}
+<form hx-post="/api/manuscripts" enctype="multipart/form-data" hx-swap="afterbegin" hx-target="#writer-manuscripts">
+    <label>Titre:<input data-test-new-manuscript-field="title" type="text" name="title"></label>
+    <label>Auteur visible:<input data-test-new-manuscript-field="author" type="text" name="author"></label>
+    <label>Fichier:<input data-test-new-manuscript-field="file" type="file" name="file"></label>
+    <button data-test="Submit new manuscript" type="submit">Soumettre à validation</button>
+</form>
+<ul id="writer-manuscripts">
+    {{ range .Manuscripts }}{{ template "manuscript-item" . }}{{ end }}
+</ul>
+{{ end }}
