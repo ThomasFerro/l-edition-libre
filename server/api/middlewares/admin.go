@@ -17,7 +17,7 @@ func RequiresAdminApiKey(next HandlerFuncReturningRequest) HandlerFuncReturningR
 		configuredApiKey := configuration.GetConfiguration(configuration.ADMIN_API_KEY)
 		if configuredApiKey != apiKey {
 			slog.Warn("unauthorized api key")
-			helpers.ManageError(w, fmt.Errorf("%v", http.StatusUnauthorized))
+			helpers.ManageErrorAsJson(w, fmt.Errorf("%v", http.StatusUnauthorized))
 			return r
 		}
 		return next(w, r)

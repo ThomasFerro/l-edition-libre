@@ -29,7 +29,7 @@ func handleIndex() func(w http.ResponseWriter, r *http.Request) *http.Request {
 		isCurrentlyAuthenticated, err := isAuthenticated(r)
 		if err != nil {
 			slog.Error("unable to check if currently authenticated", err)
-			helpers.ManageError(w, err)
+			helpers.ManageErrorAsJson(w, err)
 			return r
 		}
 

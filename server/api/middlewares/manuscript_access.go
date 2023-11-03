@@ -12,11 +12,11 @@ func UserShouldHaveAccessToManuscript(next HandlerFuncReturningRequest) HandlerF
 	return func(w http.ResponseWriter, r *http.Request) *http.Request {
 		haveAccess, err := application.UserHaveAccessToManuscript(r.Context())
 		if err != nil {
-			helpers.ManageError(w, err)
+			helpers.ManageErrorAsJson(w, err)
 			return r
 		}
 		if !haveAccess {
-			helpers.ManageError(w, domain.ManuscriptNotFound{})
+			helpers.ManageErrorAsJson(w, domain.ManuscriptNotFound{})
 			return r
 		}
 		return next(w, r)

@@ -30,7 +30,7 @@ func ExtractManuscriptID(next HandlerFuncReturningRequest) HandlerFuncReturningR
 		manuscriptID, err := application.ParseManuscriptID(helpers.FromUrlParams(r.Context(), ":manuscriptID"))
 
 		if err != nil {
-			helpers.ManageError(w, err)
+			helpers.ManageErrorAsJson(w, err)
 			return r
 		}
 		r = SetManuscriptID(r, manuscriptID)

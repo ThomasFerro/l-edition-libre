@@ -99,7 +99,7 @@ func handleLogin(authenticator Authenticator) func(http.ResponseWriter, *http.Re
 		state, err := generateRandomState()
 		if err != nil {
 			slog.Error("login state generation has failed", err)
-			helpers.ManageError(w, err)
+			helpers.ManageErrorAsJson(w, err)
 			return r
 		}
 
@@ -122,7 +122,7 @@ func handleLogout(w http.ResponseWriter, r *http.Request) *http.Request {
 	logoutUrl, err := url.Parse("https://" + auth0.Auth0Domain + "/v2/logout")
 	if err != nil {
 		slog.Error("unable to parse logout url", err)
-		helpers.ManageError(w, err)
+		helpers.ManageErrorAsJson(w, err)
 		return r
 	}
 
@@ -134,7 +134,7 @@ func handleLogout(w http.ResponseWriter, r *http.Request) *http.Request {
 	returnTo, err := url.Parse(scheme + "://" + r.Host + "/logout-callback")
 	if err != nil {
 		slog.Error("unable to parse callback url", err)
-		helpers.ManageError(w, err)
+		helpers.ManageErrorAsJson(w, err)
 		return r
 	}
 
@@ -187,39 +187,39 @@ func handleLoginCallback(authenticator Authenticator) func(http.ResponseWriter, 
 		cookieState, err := r.Cookie("state_cookie")
 		if err != nil {
 			slog.Error("unable to get state cookie", err)
-			helpers.ManageError(w, err)
+			helpers.ManageErrorAsJson(w, err)
 			return r
 		}
 		if cookieState.Value != r.URL.Query().Get("state") {
 			slog.Error("state mismatch")
-			helpers.ManageError(w, errors.New("state mismatch"))
+			helpers.ManageErrorAsJson(w, errors.New("state mismatch"))
 			return r
 		}
 
 		token, err := authenticator.Exchange(r.Context(), r.URL.Query().Get("code"))
 		if err != nil {
 			slog.Error("unable to echange code for an auth token", err)
-			helpers.ManageError(w, err)
+			helpers.ManageErrorAsJson(w, err)
 			return r
 		}
 
 		idToken, err := authenticator.VerifyIDToken(r.Context(), token)
 		if err != nil {
 			slog.Error("unable to verify id token", err)
-			helpers.ManageError(w, err)
+			helpers.ManageErrorAsJson(w, err)
 			return r
 		}
 
 		var profile map[string]interface{}
 		if err := idToken.Claims(&profile); err != nil {
 			slog.Error("unable to extract claims from id token", err)
-			helpers.ManageError(w, err)
+			helpers.ManageErrorAsJson(w, err)
 			return r
 		}
 		marshaledProfile, err := json.Marshal(profile)
 		if err != nil {
 			slog.Error("unable to marshal profile", err)
-			helpers.ManageError(w, err)
+			helpers.ManageErrorAsJson(w, err)
 			return r
 		}
 

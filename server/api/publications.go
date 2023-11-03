@@ -23,13 +23,13 @@ func handlePublicationState(w http.ResponseWriter, r *http.Request) *http.Reques
 	queryResult, err := app.Query(r.Context(), queries.PublicationStatus{})
 	if err != nil {
 		slog.Error("publication status query error", err, "publication_id", publicationID.String())
-		helpers.ManageError(w, err)
+		helpers.ManageErrorAsJson(w, err)
 		return r
 	}
 	status, castedSuccessfuly := queryResult.(domain.PublicationStatus)
 	if !castedSuccessfuly {
 		slog.Error("publication status query result casting error", err, "publication_id", publicationID.String())
-		helpers.ManageError(w, err)
+		helpers.ManageErrorAsJson(w, err)
 		return r
 	}
 

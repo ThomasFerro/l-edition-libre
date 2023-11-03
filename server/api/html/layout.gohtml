@@ -13,6 +13,12 @@
     {{ template "content" . }}
     <!-- TODO: Embed htmx -->
     <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <script>document.addEventListener('click', e => {
+            if (e.target.dataset.hasOwnProperty('removeParentOnClick')) {
+                e.preventDefault()
+                e.target.parentElement.remove()
+            }
+        })</script>
 </body>
 
 </html>

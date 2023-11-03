@@ -30,7 +30,7 @@ func handleAccountCreation(w http.ResponseWriter, r *http.Request) *http.Request
 	slog.Info("receiving account creation request", "body", dto)
 	if err != nil {
 		slog.Error("account creation request dto decoding error", err)
-		helpers.ManageError(w, err)
+		helpers.ManageErrorAsJson(w, err)
 		return r
 	}
 
@@ -40,7 +40,7 @@ func handleAccountCreation(w http.ResponseWriter, r *http.Request) *http.Request
 	})
 	if err != nil {
 		slog.Error("account creation request error", err)
-		helpers.ManageError(w, err)
+		helpers.ManageErrorAsJson(w, err)
 		return r
 	}
 	r = r.WithContext(ctx)
@@ -64,7 +64,7 @@ func handlePromoteToEditor(w http.ResponseWriter, r *http.Request) *http.Request
 	ctx, err := app.SendCommand(r.Context(), commands.PromoteUserToEditor{})
 	if err != nil {
 		slog.Error("promotion to editor request error", err)
-		helpers.ManageError(w, err)
+		helpers.ManageErrorAsJson(w, err)
 		return r
 	}
 	r = r.WithContext(ctx)

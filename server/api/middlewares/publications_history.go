@@ -29,7 +29,7 @@ func InjectContextualizedPublicationHistory(next HandlerFuncReturningRequest) Ha
 		}
 		publicationhistory, err := publicationsHistory.For(publicationID)
 		if err != nil {
-			helpers.ManageError(w, err)
+			helpers.ManageErrorAsJson(w, err)
 			return r
 		}
 		r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedPublicationHistoryContextKey{}, mapHistory(publicationhistory)))

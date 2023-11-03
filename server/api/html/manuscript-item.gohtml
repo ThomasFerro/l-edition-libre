@@ -1,1 +1,1 @@
-{{ define "manuscript-item" }}<li> {{ . }} </li>{{ end }}
+{{ define "manuscript-item" }}<li class="manuscript"> {{ .Title }} (<span data-test-manuscript-status="{{ .Status }}">{{ .Status }}</span>) </li>{{ end }}

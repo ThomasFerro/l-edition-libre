@@ -30,7 +30,7 @@ func handleInitDatabase(client *mongodb.DatabaseClient) func(w http.ResponseWrit
 		err := client.InitDatabase()
 		if err != nil {
 			slog.Error("unable to initialize database", err)
-			helpers.ManageError(w, err)
+			helpers.ManageErrorAsJson(w, err)
 			return r
 		}
 

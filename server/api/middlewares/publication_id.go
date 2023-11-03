@@ -30,7 +30,7 @@ func ExtractPublicationID(next HandlerFuncReturningRequest) HandlerFuncReturning
 		publicationID, err := application.ParsePublicationID(helpers.FromUrlParams(r.Context(), ":publicationID"))
 
 		if err != nil {
-			helpers.ManageError(w, err)
+			helpers.ManageErrorAsJson(w, err)
 			return r
 		}
 		r = SetPublicationID(r, publicationID)

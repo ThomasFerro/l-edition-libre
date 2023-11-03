@@ -23,7 +23,7 @@ func InjectContextualizedManuscriptsHistory(next HandlerFuncReturningRequest) Ha
 	return func(w http.ResponseWriter, r *http.Request) *http.Request {
 		manuscriptsHistory, err := manuscriptsHistory(r.Context())
 		if err != nil {
-			helpers.ManageError(w, err)
+			helpers.ManageErrorAsJson(w, err)
 			return r
 		}
 		r = r.WithContext(context.WithValue(r.Context(), contexts.ContextualizedManuscriptsHistoryContextKey{}, mapHistories(manuscriptsHistory)))

@@ -10,8 +10,13 @@ type HttpErrorMessage struct {
 	Error string `json:"error"`
 }
 
-func ManageError(w http.ResponseWriter, err error) {
+func ManageErrorAsJson(w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
+	errorMessage := ExtractErrorMessage(err)
+	WriteJson(w, errorMessage)
+}
+
+func ExtractErrorMessage(err error) HttpErrorMessage {
 	typedDomainError, isDomainError := err.(domain.DomainError)
 	errorMessage := HttpErrorMessage{
 		Error: err.Error(),
@@ -21,5 +26,5 @@ func ManageError(w http.ResponseWriter, err error) {
 			Error: typedDomainError.Name(),
 		}
 	}
-	WriteJson(w, errorMessage)
+	return errorMessage
 }

@@ -12,11 +12,11 @@ func OnlyAvailableForEditor(next HandlerFuncReturningRequest) HandlerFuncReturni
 	return func(w http.ResponseWriter, r *http.Request) *http.Request {
 		isAnEditor, err := application.IsAnEditor(r.Context())
 		if err != nil {
-			helpers.ManageError(w, err)
+			helpers.ManageErrorAsJson(w, err)
 			return r
 		}
 		if !isAnEditor {
-			helpers.ManageError(w, domain.ManuscriptNotFound{})
+			helpers.ManageErrorAsJson(w, domain.ManuscriptNotFound{})
 			return r
 		}
 		return next(w, r)

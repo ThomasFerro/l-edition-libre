@@ -55,7 +55,7 @@ func PersistNewEvents(next HandlerFuncReturningRequest) HandlerFuncReturningRequ
 			usersHistory := ctx.Value(contexts.UsersHistoryContextKey{}).(application.UsersHistory)
 			err := usersHistory.Append(ctx, contextualizedUserEvents)
 			if err != nil {
-				helpers.ManageError(w, err)
+				helpers.ManageErrorAsJson(w, err)
 				return r
 			}
 		}
@@ -63,7 +63,7 @@ func PersistNewEvents(next HandlerFuncReturningRequest) HandlerFuncReturningRequ
 			manuscriptsHistory := ctx.Value(contexts.ManuscriptsHistoryContextKey{}).(application.ManuscriptsHistory)
 			err := manuscriptsHistory.Append(ctx, contextualizedManuscriptEvents)
 			if err != nil {
-				helpers.ManageError(w, err)
+				helpers.ManageErrorAsJson(w, err)
 				return r
 			}
 		}
@@ -71,7 +71,7 @@ func PersistNewEvents(next HandlerFuncReturningRequest) HandlerFuncReturningRequ
 			publicationsHistory := ctx.Value(contexts.PublicationsHistoryContextKey{}).(application.PublicationsHistory)
 			err := publicationsHistory.Append(ctx, contextualizedPublicationEvents)
 			if err != nil {
-				helpers.ManageError(w, err)
+				helpers.ManageErrorAsJson(w, err)
 				return r
 			}
 		}

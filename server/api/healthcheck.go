@@ -27,7 +27,7 @@ func handleApiIsReady(client *mongodb.DatabaseClient) func(w http.ResponseWriter
 		err := client.HealthCheck()
 		if err != nil {
 			slog.Error("unhealthy database client", err)
-			helpers.ManageError(w, errors.New("unhealthy database client"))
+			helpers.ManageErrorAsJson(w, errors.New("unhealthy database client"))
 			return r
 		}
 

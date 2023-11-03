@@ -17,7 +17,7 @@ func handleManuscriptReviewSubmission(w http.ResponseWriter, r *http.Request) *h
 	ctx, err := app.SendCommand(r.Context(), commands.ReviewManuscript{})
 	if err != nil {
 		slog.Error("manuscript submission review request error", err)
-		helpers.ManageError(w, err)
+		helpers.ManageErrorAsJson(w, err)
 		return r
 	}
 	r = r.WithContext(ctx)
@@ -57,13 +57,13 @@ func handleGetManuscriptsToReview(w http.ResponseWriter, r *http.Request) *http.
 	queryResult, err := app.Query(r.Context(), queries.ManuscriptsToReview{})
 	if err != nil {
 		slog.Error("manuscripts to review request error", err)
-		helpers.ManageError(w, err)
+		helpers.ManageErrorAsJson(w, err)
 		return r
 	}
 	manuscripts, castedSuccessfuly := queryResult.([]domain.Manuscript)
 	if !castedSuccessfuly {
 		slog.Error("manuscripts to review query result casting error", err)
-		helpers.ManageError(w, err)
+		helpers.ManageErrorAsJson(w, err)
 		return r
 	}
 
