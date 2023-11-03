@@ -4,6 +4,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"text/template"
 
 	"github.com/ThomasFerro/l-edition-libre/api/helpers"
 	"github.com/ThomasFerro/l-edition-libre/api/html"
@@ -19,12 +20,28 @@ import (
 )
 
 type WriterManuscriptDto struct {
-	Title  string `json:"title"`
-	Status string `json:"status"`
+	Title  string                  `json:"title"`
+	Status domain.ManuscriptStatus `json:"status"`
 }
 type WriterManuscriptsDto struct {
 	Authenticated bool
 	Manuscripts   []WriterManuscriptDto
+}
+
+var translateStatus = func(status domain.ManuscriptStatus) string {
+	switch status {
+	case domain.PendingReview:
+		return "en attente de revue"
+	case domain.Reviewed:
+		return "validé"
+	case domain.Canceled:
+		return "soumission annulée"
+	default:
+		return "status introuvable"
+	}
+}
+var transateStatusFuncMap = template.FuncMap{
+	"translateStatus": translateStatus,
 }
 
 func handleGetManuscripts(w http.ResponseWriter, r *http.Request) *http.Request {
@@ -50,15 +67,13 @@ func handleGetManuscripts(w http.ResponseWriter, r *http.Request) *http.Request 
 	for _, manuscript := range manuscripts {
 		dto.Manuscripts = append(dto.Manuscripts, WriterManuscriptDto{
 			Title:  manuscript.Title,
-			Status: string(manuscript.Status),
+			Status: manuscript.Status,
 		})
 	}
 
-	translateStatus := func(status domain.ManuscriptStatus) string {
-		return "TODO"
-	}
-
-	return html.RespondWithIndexTemplate(w, r, dto, "manuscripts.gohtml", "manuscript-item.gohtml")
+	return html.RespondWithIndexTemplate(w, r, dto, html.WithFuncs{
+		Funcs: transateStatusFuncMap,
+	}, html.WithFiles("manuscripts.gohtml", "manuscript-item.gohtml"))
 }
 
 type SubmitManuscriptRequestDto struct {
@@ -108,7 +123,9 @@ func handleManuscriptCreation(w http.ResponseWriter, r *http.Request) *http.Requ
 
 	return html.RespondWithTemplate(w, r, WriterManuscriptDto{
 		Title: dto.Title,
-	}, "manuscript-item", "manuscript-item.gohtml")
+	}, "manuscript-item", html.WithFiles("manuscript-item.gohtml"), html.WithFuncs{
+		Funcs: transateStatusFuncMap,
+	})
 }
 
 type ManuscriptDto struct {

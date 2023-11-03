@@ -35,6 +35,6 @@ func handleIndex() func(w http.ResponseWriter, r *http.Request) *http.Request {
 
 		return html.RespondWithIndexTemplate(w, r, IndexParameters{
 			Authenticated: isCurrentlyAuthenticated,
-		}, "index.gohtml")
+		}, html.WithFiles("index.gohtml"))
 	}
 }

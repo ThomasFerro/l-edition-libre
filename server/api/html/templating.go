@@ -4,6 +4,7 @@ import (
 	"embed"
 	"html/template"
 	"net/http"
+	"sort"
 
 	"github.com/ThomasFerro/l-edition-libre/api/helpers"
 	"golang.org/x/exp/slog"
@@ -18,11 +19,17 @@ type TemplateOption interface {
 	Apply(t *template.Template) (*template.Template, error)
 }
 
-type WithFiles struct {
+func WithFiles(files ...string) WithFilesOption {
+	return WithFilesOption{
+		Files: files,
+	}
+}
+
+type WithFilesOption struct {
 	Files []string
 }
 
-func (o WithFiles) Apply(t *template.Template) (*template.Template, error) {
+func (o WithFilesOption) Apply(t *template.Template) (*template.Template, error) {
 	return t.ParseFS(templates, o.Files...)
 }
 
@@ -35,11 +42,10 @@ func (o WithFuncs) Apply(t *template.Template) (*template.Template, error) {
 }
 
 func RespondWithIndexTemplate(w http.ResponseWriter, r *http.Request, data interface{}, options ...TemplateOption) *http.Request {
-	files := WithFiles{
-		Files: []string{
-			"layout.gohtml",
-			"authentication.gohtml",
-		}}
+	files := WithFiles(
+		"layout.gohtml",
+		"authentication.gohtml",
+	)
 	return RespondWithTemplate(w, r, data, "layout", append(options, files)...)
 }
 
@@ -47,11 +53,24 @@ func RespondWithErrorTemplate(w http.ResponseWriter, r *http.Request, target str
 	w.Header().Add("HX-Retarget", target)
 	w.Header().Add("HX-Reswap", "beforeend")
 	errorMessage := helpers.ExtractErrorMessage(err)
-	return RespondWithTemplate(w, r, errorMessage.Error, "error", WithFiles{Files: []string{"error.gohtml"}})
+	return RespondWithTemplate(w, r, errorMessage.Error, "error", WithFiles("error.gohtml"))
+}
+
+func sortTemplateOption(options ...TemplateOption) []TemplateOption {
+	sort.Slice(options, func(optionAIndex, _ int) bool {
+		optionA := options[optionAIndex]
+		switch optionA.(type) {
+		case WithFilesOption:
+			return false
+		}
+		return true
+	})
+	return options
 }
 
 func RespondWithTemplate(w http.ResponseWriter, r *http.Request, data interface{}, templateName string, options ...TemplateOption) *http.Request {
 	t := template.New("")
+	options = sortTemplateOption(options...)
 	for _, option := range options {
 		var err error
 		t, err = option.Apply(t)
