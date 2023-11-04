@@ -10,9 +10,8 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// TODO: Obligé de les embed ?
-//
 //go:embed *.gohtml
+//go:embed htmx.min.js
 var templates embed.FS
 
 type TemplateOption interface {
@@ -84,8 +83,19 @@ func RespondWithTemplate(w http.ResponseWriter, r *http.Request, data interface{
 	err := t.ExecuteTemplate(w, templateName, data)
 	if err != nil {
 		slog.Error("template execution error", err)
+		http.Redirect(w, r, "/error", http.StatusTemporaryRedirect)
+		return r
+	}
+	return r
+}
+
+func RespondWithStaticFile(w http.ResponseWriter, r *http.Request, filename string) *http.Request {
+	file, err := templates.ReadFile(filename)
+	if err != nil {
+		slog.Error("unable to read "+filename, err)
 		helpers.ManageErrorAsJson(w, err)
 		return r
 	}
+	w.Write([]byte(file))
 	return r
 }

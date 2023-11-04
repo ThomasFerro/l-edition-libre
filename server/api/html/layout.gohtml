@@ -11,8 +11,7 @@
 <body>
     {{ template "authentication" .Authenticated }}
     {{ template "content" . }}
-    <!-- TODO: Embed htmx -->
-    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <script src="/htmx" type="js"></script>
     <script>document.addEventListener('click', e => {
             if (e.target.dataset.hasOwnProperty('removeParentOnClick')) {
                 e.preventDefault()

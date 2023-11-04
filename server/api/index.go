@@ -19,6 +19,11 @@ func handleIndexFuncs(serveMux *http.ServeMux) {
 			Method:  "GET",
 			Handler: handleError(),
 		},
+		{
+			Path:    "/htmx",
+			Method:  "GET",
+			Handler: handleHtmx(),
+		},
 	}
 	router.HandleRoutes(serveMux, routes)
 }
@@ -40,5 +45,11 @@ func handleIndex() func(w http.ResponseWriter, r *http.Request) *http.Request {
 func handleError() func(w http.ResponseWriter, r *http.Request) *http.Request {
 	return func(w http.ResponseWriter, r *http.Request) *http.Request {
 		return html.RespondWithLayoutTemplate(w, r, nil, html.WithFiles("error-page.gohtml"))
+	}
+}
+
+func handleHtmx() func(w http.ResponseWriter, r *http.Request) *http.Request {
+	return func(w http.ResponseWriter, r *http.Request) *http.Request {
+		return html.RespondWithStaticFile(w, r, "htmx.min.js")
 	}
 }
