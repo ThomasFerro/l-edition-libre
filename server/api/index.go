@@ -3,10 +3,8 @@ package api
 import (
 	"net/http"
 
-	"github.com/ThomasFerro/l-edition-libre/api/helpers"
 	"github.com/ThomasFerro/l-edition-libre/api/html"
 	"github.com/ThomasFerro/l-edition-libre/api/router"
-	"golang.org/x/exp/slog"
 )
 
 func handleIndexFuncs(serveMux *http.ServeMux) {
@@ -15,6 +13,11 @@ func handleIndexFuncs(serveMux *http.ServeMux) {
 			Path:    "/",
 			Method:  "GET",
 			Handler: handleIndex(),
+		},
+		{
+			Path:    "/error",
+			Method:  "GET",
+			Handler: handleError(),
 		},
 	}
 	router.HandleRoutes(serveMux, routes)
@@ -26,15 +29,16 @@ type IndexParameters struct {
 
 func handleIndex() func(w http.ResponseWriter, r *http.Request) *http.Request {
 	return func(w http.ResponseWriter, r *http.Request) *http.Request {
-		isCurrentlyAuthenticated, err := isAuthenticated(r)
-		if err != nil {
-			slog.Error("unable to check if currently authenticated", err)
-			helpers.ManageErrorAsJson(w, err)
-			return r
-		}
+		isCurrentlyAuthenticated := isAuthenticated(r)
 
-		return html.RespondWithIndexTemplate(w, r, IndexParameters{
+		return html.RespondWithLayoutTemplate(w, r, IndexParameters{
 			Authenticated: isCurrentlyAuthenticated,
 		}, html.WithFiles("index.gohtml"))
+	}
+}
+
+func handleError() func(w http.ResponseWriter, r *http.Request) *http.Request {
+	return func(w http.ResponseWriter, r *http.Request) *http.Request {
+		return html.RespondWithLayoutTemplate(w, r, nil, html.WithFiles("error-page.gohtml"))
 	}
 }

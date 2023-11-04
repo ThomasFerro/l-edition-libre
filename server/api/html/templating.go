@@ -41,7 +41,7 @@ func (o WithFuncs) Apply(t *template.Template) (*template.Template, error) {
 	return t.Funcs(o.Funcs), nil
 }
 
-func RespondWithIndexTemplate(w http.ResponseWriter, r *http.Request, data interface{}, options ...TemplateOption) *http.Request {
+func RespondWithLayoutTemplate(w http.ResponseWriter, r *http.Request, data interface{}, options ...TemplateOption) *http.Request {
 	files := WithFiles(
 		"layout.gohtml",
 		"authentication.gohtml",
@@ -49,11 +49,11 @@ func RespondWithIndexTemplate(w http.ResponseWriter, r *http.Request, data inter
 	return RespondWithTemplate(w, r, data, "layout", append(options, files)...)
 }
 
-func RespondWithErrorTemplate(w http.ResponseWriter, r *http.Request, target string, err error) *http.Request {
+func RespondWithErrorFragment(w http.ResponseWriter, r *http.Request, target string, err error) *http.Request {
 	w.Header().Add("HX-Retarget", target)
 	w.Header().Add("HX-Reswap", "beforeend")
 	errorMessage := helpers.ExtractErrorMessage(err)
-	return RespondWithTemplate(w, r, errorMessage.Error, "error", WithFiles("error.gohtml"))
+	return RespondWithTemplate(w, r, errorMessage.Error, "error-fragment", WithFiles("error-fragment.gohtml"))
 }
 
 func sortTemplateOption(options ...TemplateOption) []TemplateOption {
@@ -75,9 +75,8 @@ func RespondWithTemplate(w http.ResponseWriter, r *http.Request, data interface{
 		var err error
 		t, err = option.Apply(t)
 		if err != nil {
-			// TODO: Une gestion d'erreur critique comme celle-ci en json
 			slog.Error("template option error", err)
-			helpers.ManageErrorAsJson(w, err)
+			http.Redirect(w, r, "/error", http.StatusTemporaryRedirect)
 			return r
 		}
 	}

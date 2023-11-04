@@ -22,12 +22,12 @@ func UserIdFromRequest(r *http.Request) application.UserID {
 	return r.Context().Value(contexts.UserIDContextKey{}).(application.UserID)
 }
 
-func ExtractUserID(next HandlerFuncReturningRequest) HandlerFuncReturningRequest {
+func EnsureUserIsAuthenticatedAndExtractUserID(next HandlerFuncReturningRequest) HandlerFuncReturningRequest {
 	return func(w http.ResponseWriter, r *http.Request) *http.Request {
-		userId, err := extractUserIDFromCookie(r)
+		userId, err := ExtractUserIDFromCookie(r)
 		if err != nil {
 			slog.Warn("Unable to extract user id: %v", err)
-			http.Error(w, "Unable to extract user id", http.StatusBadRequest)
+			http.Redirect(w, r, "/logout", http.StatusTemporaryRedirect)
 			return r
 		}
 		if userId == "" {
@@ -40,7 +40,7 @@ func ExtractUserID(next HandlerFuncReturningRequest) HandlerFuncReturningRequest
 	}
 }
 
-func extractUserIDFromCookie(r *http.Request) (application.UserID, error) {
+func ExtractUserIDFromCookie(r *http.Request) (application.UserID, error) {
 	cookie, err := r.Cookie("access_token")
 	if err != nil {
 		return "", err

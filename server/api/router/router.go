@@ -54,6 +54,9 @@ func (route Route) pathUntilFirstParametrizedSegment() string {
 }
 
 func (route Route) matchRequest(url, method string) bool {
+	if method != route.Method {
+		return false
+	}
 	urlSegments := strings.Split(url, "/")
 	pathSegments := route.pathSegments()
 	if len(urlSegments) != len(pathSegments) {
@@ -63,7 +66,7 @@ func (route Route) matchRequest(url, method string) bool {
 		if pathSegments[index].isParameterized() {
 			continue
 		}
-		if pathSegments[index].value != urlSegment || method != route.Method {
+		if pathSegments[index].value != urlSegment {
 			return false
 		}
 	}

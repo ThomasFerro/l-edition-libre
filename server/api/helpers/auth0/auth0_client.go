@@ -36,7 +36,7 @@ func ExtractUserID(token string) (application.UserID, error) {
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		return application.UserID(""), fmt.Errorf("user info body reading error: %v (body: %v)", err)
+		return application.UserID(""), fmt.Errorf("user info body reading error: %v (body: %v)", err, body)
 	}
 	var payload Payload
 	err = json.Unmarshal(body, &payload)

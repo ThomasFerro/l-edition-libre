@@ -5,7 +5,6 @@ import (
 	"net/http"
 )
 
-// TODO: Supprimer quand tout sera en HTML
 func WriteJson(w http.ResponseWriter, dto interface{}) {
 	w.Header().Add("Content-Type", "application/json")
 	manuscriptJSON, err := json.Marshal(dto)

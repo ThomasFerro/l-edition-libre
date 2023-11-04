@@ -71,7 +71,7 @@ func handleGetManuscripts(w http.ResponseWriter, r *http.Request) *http.Request 
 		})
 	}
 
-	return html.RespondWithIndexTemplate(w, r, dto, html.WithFuncs{
+	return html.RespondWithLayoutTemplate(w, r, dto, html.WithFuncs{
 		Funcs: transateStatusFuncMap,
 	}, html.WithFiles("manuscripts.gohtml", "manuscript-item.gohtml"))
 }
@@ -93,7 +93,7 @@ func handleManuscriptCreation(w http.ResponseWriter, r *http.Request) *http.Requ
 	file, _, err := r.FormFile("file")
 	if err != nil {
 		slog.Error("manuscript creation request file reading error", err)
-		return html.RespondWithErrorTemplate(w, r, "#new-manuscript-form", ManuscriptCreationError{})
+		return html.RespondWithErrorFragment(w, r, "#new-manuscript-form", ManuscriptCreationError{})
 	}
 	dto := SubmitManuscriptRequestDto{
 		Title:  r.FormValue("title"),
@@ -116,7 +116,7 @@ func handleManuscriptCreation(w http.ResponseWriter, r *http.Request) *http.Requ
 	})
 	if err != nil {
 		slog.Error("manuscript creation request error", err)
-		return html.RespondWithErrorTemplate(w, r, "#new-manuscript-form", ManuscriptCreationError{})
+		return html.RespondWithErrorFragment(w, r, "#new-manuscript-form", ManuscriptCreationError{})
 	}
 	r = r.WithContext(ctx)
 	slog.Info("manuscript created", "manuscript_id", newManuscriptID.String())
@@ -189,12 +189,11 @@ func handleManuscriptsFuncs(
 			Middlewares: []middlewares.Middleware{
 				middlewares.PersistNewEvents,
 				middlewares.InjectContextualizedManuscriptsHistory,
-				middlewares.ExtractUserID,
+				middlewares.EnsureUserIsAuthenticatedAndExtractUserID,
 				middlewares.InjectFilesSaver(filesSaver),
 				middlewares.InjectManuscriptsHistory(manuscriptsHistory),
 				middlewares.InjectUsersHistory(usersHistory),
 				middlewares.InjectApplication(app),
-				//jwtMiddleware,
 			},
 			Handler: handleManuscriptCreation,
 		},
@@ -203,11 +202,10 @@ func handleManuscriptsFuncs(
 			Method: "GET",
 			Middlewares: []middlewares.Middleware{
 				middlewares.InjectContextualizedManuscriptsHistory,
-				middlewares.ExtractUserID,
+				middlewares.EnsureUserIsAuthenticatedAndExtractUserID,
 				middlewares.InjectManuscriptsHistory(manuscriptsHistory),
 				middlewares.InjectUsersHistory(usersHistory),
 				middlewares.InjectApplication(app),
-				//jwtMiddleware,
 			},
 			Handler: handleGetManuscripts,
 		},
@@ -218,7 +216,7 @@ func handleManuscriptsFuncs(
 				middlewares.UserShouldHaveAccessToManuscript,
 				middlewares.InjectContextualizedManuscriptsHistory,
 				middlewares.InjectContextualizedUserHistory,
-				middlewares.ExtractUserID,
+				middlewares.EnsureUserIsAuthenticatedAndExtractUserID,
 				middlewares.ExtractManuscriptID,
 				middlewares.InjectManuscriptsHistory(manuscriptsHistory),
 				middlewares.InjectUsersHistory(usersHistory),
@@ -235,7 +233,7 @@ func handleManuscriptsFuncs(
 				middlewares.UserShouldHaveAccessToManuscript,
 				middlewares.InjectContextualizedManuscriptsHistory,
 				middlewares.InjectContextualizedUserHistory,
-				middlewares.ExtractUserID,
+				middlewares.EnsureUserIsAuthenticatedAndExtractUserID,
 				middlewares.ExtractManuscriptID,
 				middlewares.InjectManuscriptsHistory(manuscriptsHistory),
 				middlewares.InjectUsersHistory(usersHistory),
@@ -252,7 +250,7 @@ func handleManuscriptsFuncs(
 				middlewares.OnlyAvailableForEditor,
 				middlewares.InjectContextualizedManuscriptsHistory,
 				middlewares.InjectContextualizedUserHistory,
-				middlewares.ExtractUserID,
+				middlewares.EnsureUserIsAuthenticatedAndExtractUserID,
 				middlewares.ExtractManuscriptID,
 				middlewares.InjectPublicationsHistory(publicationsHistory),
 				middlewares.InjectManuscriptsHistory(manuscriptsHistory),
@@ -269,12 +267,10 @@ func handleManuscriptsFuncs(
 				middlewares.OnlyAvailableForEditor,
 				middlewares.InjectContextualizedManuscriptsHistory,
 				middlewares.InjectContextualizedUserHistory,
-				middlewares.ExtractUserID,
+				middlewares.EnsureUserIsAuthenticatedAndExtractUserID,
 				middlewares.InjectManuscriptsHistory(manuscriptsHistory),
 				middlewares.InjectUsersHistory(usersHistory),
 				middlewares.InjectApplication(app),
-				// TODO: Refaire le jwtMiddleware en se basant sur un appel à /userinfo ? (déjà fait dans extract user id mais rien ne force à l'utiliser)
-				//jwtMiddleware,
 			},
 			Handler: handleGetManuscriptsToReview,
 		},

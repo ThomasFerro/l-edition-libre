@@ -70,8 +70,7 @@ func NewAuthenticator() (Authenticator, error) {
 		ClientSecret: auth0.Auth0ClientSecret,
 		RedirectURL:  auth0.Auth0CallbackURL,
 		Endpoint:     provider.Endpoint(),
-		// TODO: Quels scopes ?
-		Scopes: []string{oidc.ScopeOpenID, "profile"},
+		Scopes:       []string{oidc.ScopeOpenID, "profile"},
 	}
 
 	return Authenticator{
@@ -82,16 +81,9 @@ func NewAuthenticator() (Authenticator, error) {
 
 const STATE_COOKIE_NAME = "state_cookie"
 
-func isAuthenticated(r *http.Request) (bool, error) {
-	// TODO: Un appel pour vérifier si le token est ok ?
-	stateCookie, err := r.Cookie(STATE_COOKIE_NAME)
-	if errors.Is(err, http.ErrNoCookie) {
-		return false, nil
-	}
-	if err != nil {
-		return false, err
-	}
-	return stateCookie.Value != "", nil
+func isAuthenticated(r *http.Request) bool {
+	_, err := middlewares.ExtractUserIDFromCookie(r)
+	return err == nil
 }
 
 func handleLogin(authenticator Authenticator) func(http.ResponseWriter, *http.Request) *http.Request {

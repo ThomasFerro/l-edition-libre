@@ -67,5 +67,5 @@ func handleGetManuscriptsToReview(w http.ResponseWriter, r *http.Request) *http.
 		return r
 	}
 
-	return html.RespondWithIndexTemplate(w, r, fromDomain(manuscripts), html.WithFiles("manuscripts-review.gohtml"))
+	return html.RespondWithLayoutTemplate(w, r, fromDomain(manuscripts), html.WithFiles("manuscripts-review.gohtml"))
 }
