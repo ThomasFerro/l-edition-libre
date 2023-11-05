@@ -11,13 +11,7 @@
 <body>
     {{ template "authentication" .Authenticated }}
     {{ template "content" . }}
-    <script src="/htmx" type="js"></script>
-    <script>document.addEventListener('click', e => {
-            if (e.target.dataset.hasOwnProperty('removeParentOnClick')) {
-                e.preventDefault()
-                e.target.parentElement.remove()
-            }
-        })</script>
+    <script src="/htmx"></script>
 </body>
 
 </html>

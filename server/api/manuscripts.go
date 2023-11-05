@@ -122,7 +122,8 @@ func handleManuscriptCreation(w http.ResponseWriter, r *http.Request) *http.Requ
 	slog.Info("manuscript created", "manuscript_id", newManuscriptID.String())
 
 	return html.RespondWithTemplate(w, r, WriterManuscriptDto{
-		Title: dto.Title,
+		Title:  dto.Title,
+		Status: domain.PendingReview,
 	}, "manuscript-item", html.WithFiles("manuscript-item.gohtml"), html.WithFuncs{
 		Funcs: transateStatusFuncMap,
 	})

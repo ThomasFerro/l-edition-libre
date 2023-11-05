@@ -1,9 +1,9 @@
-import { test } from "./test";
+import { test } from "./helpers/test";
 test.describe('Submit a manuscript', () => {
-  test('Submit a manuscript', async ({ Given, When, Then }) => {
-    await Given.IAmAnAuthenticatedWriter()
-    await When.ISubmitAManuscriptFor("My first novel")
-    await Then.TheFollowingManuscriptIsPendingReviewFromTheEditor("My first novel")
+  test('Submit a manuscript', async ({ Manuscripts, Authentication }) => {
+    await Authentication.givenIAmAnAuthenticatedWriter()
+    await Manuscripts.whenISubmitAManuscriptFor("My first novel")
+    await Manuscripts.thenTheFollowingManuscriptIsPendingReviewFromTheEditor("My first novel")
   });
 })
 

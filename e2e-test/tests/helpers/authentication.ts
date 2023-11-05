@@ -3,6 +3,10 @@ import { Page } from "@playwright/test";
 export class Authentication {
     constructor(private readonly page: Page) { }
 
+    async givenIAmAnAuthenticatedWriter() {
+        await this.authenticateAsWriter();
+    }
+
     async authenticateAsWriter() {
         await this.authenticate(process.env["AUTH0_WRITER_USERNAME"], process.env["AUTH0_WRITER_PASSWORD"])
     }
@@ -18,7 +22,7 @@ export class Authentication {
             await disconnectButton.click()
         }
         await this.page.locator('[data-test="Go to connection page"]').click()
-        
+
 
         await this.page.locator("#username").fill(login)
         await this.page.locator("#password").fill(password)

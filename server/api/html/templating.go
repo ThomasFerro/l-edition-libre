@@ -96,6 +96,7 @@ func RespondWithStaticFile(w http.ResponseWriter, r *http.Request, filename stri
 		helpers.ManageErrorAsJson(w, err)
 		return r
 	}
+	w.Header().Add("Content-type", "text/javascript")
 	w.Write([]byte(file))
 	return r
 }
