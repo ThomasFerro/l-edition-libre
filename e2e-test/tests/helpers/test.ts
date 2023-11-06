@@ -6,8 +6,8 @@ export const test = base.extend<{
     Authentication: Authentication,
     Manuscripts: Manuscripts,
 }>({
-    Manuscripts: async ({ page }, use) => {
-        const manuscripts = new Manuscripts(page);
+    Manuscripts: async ({ page, Authentication }, use) => {
+        const manuscripts = new Manuscripts(page, Authentication);
         await use(manuscripts)
     },
     Authentication: async ({ page }, use) => {

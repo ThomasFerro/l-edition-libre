@@ -7,6 +7,7 @@ Feature: Submit a manusript
   Background:
     Given I am an authenticated writer
 
+  @Migrated
   Scenario: Submit a manuscript
     When I submit a manuscript for "My first novel"
     Then "My first novel" is pending review from the editor

@@ -1,4 +1,5 @@
 import { Page } from "@playwright/test";
+import { Writers } from "./writers";
 
 export class Authentication {
     constructor(private readonly page: Page) { }
@@ -7,8 +8,18 @@ export class Authentication {
         await this.authenticateAsWriter();
     }
 
-    async authenticateAsWriter() {
-        await this.authenticate(process.env["AUTH0_WRITER_USERNAME"], process.env["AUTH0_WRITER_PASSWORD"])
+    async givenIAmAuthenticatedAsAnotherWriter() {
+        await this.authenticateAsWriter(Writers.AnotherAuthor)
+    }
+
+    async authenticateAsWriter(writerName: string = Writers.FirstAuthor) {
+        if (writerName == Writers.FirstAuthor) {
+            return this.authenticate(process.env["AUTH0_WRITER_USERNAME"], process.env["AUTH0_WRITER_PASSWORD"])
+        }
+        if (writerName == Writers.AnotherAuthor) {
+            return this.authenticate(process.env["AUTH0_SECOND_WRITER_USERNAME"], process.env["AUTH0_SECOND_WRITER_PASSWORD"])
+        }
+        throw new Error("Unknown writer " + writerName)
     }
 
     async authenticateAsEditor() {
@@ -22,7 +33,6 @@ export class Authentication {
             await disconnectButton.click()
         }
         await this.page.locator('[data-test="Go to connection page"]').click()
-
 
         await this.page.locator("#username").fill(login)
         await this.page.locator("#password").fill(password)
