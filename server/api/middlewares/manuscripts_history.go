@@ -39,15 +39,15 @@ func manuscriptsHistoryFromContext(ctx context.Context) application.ManuscriptsH
 	return ctx.Value(contexts.ManuscriptsHistoryContextKey{}).(application.ManuscriptsHistory)
 }
 
-func manuscriptsHistory(ctx context.Context) (utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent], error) {
+func manuscriptsHistory(ctx context.Context) (utils.OrderedMap[contexts.ManuscriptID, []application.ContextualizedEvent], error) {
 	isEditor, err := application.IsAnEditor(ctx)
 	if err != nil {
-		return utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent]{}, err
+		return utils.OrderedMap[contexts.ManuscriptID, []application.ContextualizedEvent]{}, err
 	}
 	manuscriptsHistory := manuscriptsHistoryFromContext(ctx)
 	if isEditor {
 		return manuscriptsHistory.ForAll()
 	}
-	userID := ctx.Value(contexts.UserIDContextKey{}).(application.UserID)
+	userID := ctx.Value(contexts.UserIDContextKey{}).(contexts.UserID)
 	return manuscriptsHistory.ForAllOfUser(userID)
 }

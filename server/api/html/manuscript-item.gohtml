@@ -1,4 +1,12 @@
 {{ define "manuscript-item" }}
 <li class="manuscript">
-    {{ .Title }} (<span data-test-manuscript-status="{{ .Status }}">{{ .Status | translateStatus }}</span>) 
+    {{ .Title }} (<span data-test-manuscript-status="{{ .Status }}">{{ .Status | translateStatus }}</span>)
+    {{ if eq .Status "PendingReview" }}
+    <button
+        data-test-manuscript-action="Cancel"
+        hx-post="/api/manuscripts/{{ .Id }}/cancel-submission"
+        hx-target="closest .manuscript"
+        hx-swap="outerHTML"
+    >Annuler la soumission</button> 
+    {{ end }}
 </li>{{ end }}

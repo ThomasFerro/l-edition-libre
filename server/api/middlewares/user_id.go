@@ -5,21 +5,20 @@ import (
 	"net/http"
 
 	"github.com/ThomasFerro/l-edition-libre/api/helpers/auth0"
-	"github.com/ThomasFerro/l-edition-libre/application"
 	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"golang.org/x/exp/slog"
 )
 
-func TryGetUserIdFromRequest(r *http.Request) (application.UserID, bool) {
+func TryGetUserIdFromRequest(r *http.Request) (contexts.UserID, bool) {
 	value := r.Context().Value(contexts.UserIDContextKey{})
 	if value == nil {
 		return "", false
 	}
-	return value.(application.UserID), true
+	return value.(contexts.UserID), true
 }
 
-func UserIdFromRequest(r *http.Request) application.UserID {
-	return r.Context().Value(contexts.UserIDContextKey{}).(application.UserID)
+func UserIdFromRequest(r *http.Request) contexts.UserID {
+	return r.Context().Value(contexts.UserIDContextKey{}).(contexts.UserID)
 }
 
 func EnsureUserIsAuthenticatedAndExtractUserID(next HandlerFuncReturningRequest) HandlerFuncReturningRequest {
@@ -40,7 +39,7 @@ func EnsureUserIsAuthenticatedAndExtractUserID(next HandlerFuncReturningRequest)
 	}
 }
 
-func ExtractUserIDFromCookie(r *http.Request) (application.UserID, error) {
+func ExtractUserIDFromCookie(r *http.Request) (contexts.UserID, error) {
 	cookie, err := r.Cookie("access_token")
 	if err != nil {
 		return "", err

@@ -10,8 +10,8 @@ import (
 
 	"github.com/ThomasFerro/l-edition-libre/api"
 	"github.com/ThomasFerro/l-edition-libre/api/middlewares"
-	"github.com/ThomasFerro/l-edition-libre/application"
 	"github.com/ThomasFerro/l-edition-libre/configuration"
+	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"github.com/cucumber/godog"
 )
 
@@ -113,7 +113,7 @@ func authentifyAs(ctx context.Context, displayedName string) (context.Context, e
 		return ctx, fmt.Errorf("unable to create a new account: %v", err)
 	}
 
-	newUserID := application.UserID(newUser.Id)
+	newUserID := contexts.UserID(newUser.Id)
 	ctx = helpers.SetUserName(ctx, newUserID, displayedName)
 	ctx = helpers.SetToken(ctx, newUserID, token)
 	return helpers.SetAuthenticatedUserID(ctx, newUserID), nil

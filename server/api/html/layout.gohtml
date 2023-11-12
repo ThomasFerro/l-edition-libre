@@ -6,12 +6,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{template "title" . }} - L'édition libre</title>
+    <script src="/htmx"></script>
 </head>
 
 <body>
     {{ template "authentication" .Authenticated }}
     {{ template "content" . }}
-    <script src="/htmx"></script>
 </body>
 
 </html>

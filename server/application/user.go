@@ -8,8 +8,6 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-type UserID string
-
 func IsAnEditor(ctx context.Context) (bool, error) {
 	getHistory := contexts.FromContextOrDefault(ctx, contexts.ContextualizedUserHistoryContextKey{}, func(c context.Context) ([]ContextualizedEvent, error) {
 		return []ContextualizedEvent{}, nil
@@ -51,6 +49,6 @@ func UserHaveAccessToManuscript(ctx context.Context) (bool, error) {
 }
 
 type UsersHistory interface {
-	For(UserID) ([]ContextualizedEvent, error)
+	For(contexts.UserID) ([]ContextualizedEvent, error)
 	Append(context.Context, []ContextualizedEvent) error
 }

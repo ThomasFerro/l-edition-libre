@@ -2,6 +2,7 @@ package queries
 
 import (
 	"context"
+	"sort"
 
 	"github.com/ThomasFerro/l-edition-libre/contexts"
 	"github.com/ThomasFerro/l-edition-libre/domain"
@@ -10,11 +11,26 @@ import (
 
 type WriterManuscripts struct{}
 
+type Manuscript struct {
+	Id contexts.ManuscriptID
+	domain.Manuscript
+}
+
 func HandleWriterManuscripts(ctx context.Context, query Query) (interface{}, error) {
-	historyForManuscripts := contexts.FromContext[[][]events.DecoratedEvent](ctx, contexts.ContextualizedManuscriptsHistoryContextKey{})
-	manuscripts := make([]domain.Manuscript, 0)
-	for _, historyForManuscript := range historyForManuscripts {
-		manuscripts = append(manuscripts, domain.RehydrateManuscript(events.ToEvents(historyForManuscript)))
+	historyForManuscripts := contexts.FromContext[map[contexts.ManuscriptID][]events.DecoratedEvent](ctx, contexts.ContextualizedManuscriptsHistoryContextKey{})
+	manuscripts := make([]Manuscript, 0)
+	for manuscriptID, historyForManuscript := range historyForManuscripts {
+
+		domainManuscript := domain.RehydrateManuscript(events.ToEvents(historyForManuscript))
+		manuscripts = append(manuscripts, Manuscript{
+			Id:         manuscriptID,
+			Manuscript: domainManuscript,
+		})
 	}
+	sort.Slice(manuscripts, func(i, j int) bool {
+		manuscriptA := manuscripts[i]
+		manuscriptB := manuscripts[j]
+		return manuscriptA.Id.String() < manuscriptB.Id.String()
+	})
 	return manuscripts, nil
 }

@@ -12,6 +12,7 @@ Feature: Submit a manusript
     When I submit a manuscript for "My first novel"
     Then "My first novel" is pending review from the editor
 
+  @Migrated
   Scenario: List submitted manuscripts
     Given the writer "First author" submitted a manuscript for "My first novel"
     And the writer "First author" submitted a manuscript for "My second novel"
@@ -23,12 +24,14 @@ Feature: Submit a manusript
       | Essay #1 |
       | Essay #2 |
 
+  @Migrated
   Scenario: Cancel a manuscript submission
     Given I submitted a manuscript for "My first novel"
     When I cancel the submission of "My first novel"
     Then submission of "My first novel" is canceled
 
   @Error
+  @Migrated
   Scenario: A manuscript should be pending review for its submission to be canceled
     Given I submitted a manuscript for "My first novel"
     And submission of "My first novel" was canceled
@@ -36,6 +39,7 @@ Feature: Submit a manusript
     Then the error "AManuscriptShouldBePendingReviewForItsSubmissionToBeCanceled" is thrown
 
   @Error @Users
+  @Migrated
   Scenario: Only the writer of a manuscript can see its submission status
     Given I submitted a manuscript for "My first novel"
     And I am authenticated as another writer
@@ -43,6 +47,7 @@ Feature: Submit a manusript
     Then the error "ManuscriptNotFound" is thrown
 
   @Error @Users
+  @Migrated
   Scenario: Only the writer of a manuscript can cancel its submission
     Given I submitted a manuscript for "My first novel"
     And I am authenticated as another writer

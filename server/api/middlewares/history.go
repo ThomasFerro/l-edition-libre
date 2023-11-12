@@ -6,11 +6,11 @@ import (
 	"github.com/ThomasFerro/l-edition-libre/utils"
 )
 
-func mapHistories[T comparable](original utils.OrderedMap[T, []application.ContextualizedEvent]) [][]events.DecoratedEvent {
-	returned := [][]events.DecoratedEvent{}
+func mapHistories[T comparable](original utils.OrderedMap[T, []application.ContextualizedEvent]) map[T][]events.DecoratedEvent {
+	returned := map[T][]events.DecoratedEvent{}
 
 	for _, keyValuePair := range original.Map() {
-		returned = append(returned, mapHistory(keyValuePair.Value))
+		returned[keyValuePair.Key] = mapHistory(keyValuePair.Value)
 	}
 	return returned
 }

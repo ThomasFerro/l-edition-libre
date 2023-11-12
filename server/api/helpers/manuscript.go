@@ -3,9 +3,9 @@ package helpers
 import (
 	"net/http"
 
-	"github.com/ThomasFerro/l-edition-libre/application"
+	"github.com/ThomasFerro/l-edition-libre/contexts"
 )
 
-func GetManuscriptID(r *http.Request) application.ManuscriptID {
-	return application.MustParseManuscriptID(FromUrlParams(r.Context(), ":manuscriptID"))
+func GetManuscriptID(r *http.Request) contexts.ManuscriptID {
+	return contexts.MustParseManuscriptID(FromUrlParams(r.Context(), ":manuscriptID"))
 }

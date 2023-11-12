@@ -33,11 +33,11 @@ func (m ManuscriptEvent) StreamID() (string, error) {
 }
 
 func manuscriptEventMapper(manuscriptEvent ManuscriptEvent) (application.ContextualizedEvent, error) {
-	manuscriptID, err := application.ParseManuscriptID(manuscriptEvent.ManuscriptID)
+	manuscriptID, err := contexts.ParseManuscriptID(manuscriptEvent.ManuscriptID)
 	if err != nil {
 		return application.ContextualizedEvent{}, err
 	}
-	userID := application.UserID(manuscriptEvent.UserID)
+	userID := contexts.UserID(manuscriptEvent.UserID)
 	originalEvent, err := toManuscriptEvent(manuscriptEvent)
 	if err != nil {
 		return application.ContextualizedEvent{}, err
@@ -51,8 +51,8 @@ func manuscriptEventMapper(manuscriptEvent ManuscriptEvent) (application.Context
 	}, nil
 }
 
-func (manuscripts ManuscriptsHistory) mapManuscriptsEvents(events utils.OrderedMap[string, []ManuscriptEvent]) (utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent], error) {
-	contextualizedEvents := utils.NewOrderedMap[application.ManuscriptID, []application.ContextualizedEvent]()
+func (manuscripts ManuscriptsHistory) mapManuscriptsEvents(events utils.OrderedMap[string, []ManuscriptEvent]) (utils.OrderedMap[contexts.ManuscriptID, []application.ContextualizedEvent], error) {
+	contextualizedEvents := utils.NewOrderedMap[contexts.ManuscriptID, []application.ContextualizedEvent]()
 
 	for _, keyValue := range events.Map() {
 		rawManuscriptID := keyValue.Key
@@ -61,18 +61,18 @@ func (manuscripts ManuscriptsHistory) mapManuscriptsEvents(events utils.OrderedM
 		for _, nextEvent := range events {
 			manuscriptEvent, err := manuscriptEventMapper(nextEvent)
 			if err != nil {
-				return utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent]{}, err
+				return utils.OrderedMap[contexts.ManuscriptID, []application.ContextualizedEvent]{}, err
 			}
 			mappedEvents = append(mappedEvents, manuscriptEvent)
 		}
-		manuscriptID := application.MustParseManuscriptID(rawManuscriptID)
+		manuscriptID := contexts.MustParseManuscriptID(rawManuscriptID)
 		contextualizedEvents = contextualizedEvents.Upsert(manuscriptID, mappedEvents)
 	}
 
 	return contextualizedEvents, nil
 }
 
-func (manuscripts ManuscriptsHistory) For(manuscriptID application.ManuscriptID) ([]application.ContextualizedEvent, error) {
+func (manuscripts ManuscriptsHistory) For(manuscriptID contexts.ManuscriptID) ([]application.ContextualizedEvent, error) {
 	events, err := manuscripts.history.ForSingleStream(manuscriptID.String(), bson.D{})
 	if err != nil {
 		return nil, err
@@ -86,18 +86,18 @@ func (manuscripts ManuscriptsHistory) For(manuscriptID application.ManuscriptID)
 	return results.Of(manuscriptID), nil
 }
 
-func (manuscripts ManuscriptsHistory) ForAll() (utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent], error) {
+func (manuscripts ManuscriptsHistory) ForAll() (utils.OrderedMap[contexts.ManuscriptID, []application.ContextualizedEvent], error) {
 	events, err := manuscripts.history.ForMultipleStreams(bson.D{})
 	if err != nil {
-		return utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent]{}, err
+		return utils.OrderedMap[contexts.ManuscriptID, []application.ContextualizedEvent]{}, err
 	}
 	return manuscripts.mapManuscriptsEvents(events)
 }
 
-func (manuscripts ManuscriptsHistory) ForAllOfUser(userID application.UserID) (utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent], error) {
+func (manuscripts ManuscriptsHistory) ForAllOfUser(userID contexts.UserID) (utils.OrderedMap[contexts.ManuscriptID, []application.ContextualizedEvent], error) {
 	events, err := manuscripts.history.ForMultipleStreams(bson.D{primitive.E{Key: "userId", Value: userID}})
 	if err != nil {
-		return utils.OrderedMap[application.ManuscriptID, []application.ContextualizedEvent]{}, err
+		return utils.OrderedMap[contexts.ManuscriptID, []application.ContextualizedEvent]{}, err
 	}
 	return manuscripts.mapManuscriptsEvents(events)
 }
@@ -129,8 +129,8 @@ func toManuscriptEvent(nextDecodedEvent ManuscriptEvent) (events.Event, error) {
 }
 
 func (manuscripts ManuscriptsHistory) Append(ctx context.Context, newEvents []application.ContextualizedEvent) error {
-	userID := ctx.Value(contexts.UserIDContextKey{}).(application.UserID)
-	manuscriptID := ctx.Value(contexts.ManuscriptIDContextKey{}).(application.ManuscriptID)
+	userID := ctx.Value(contexts.UserIDContextKey{}).(contexts.UserID)
+	manuscriptID := ctx.Value(contexts.ManuscriptIDContextKey{}).(contexts.ManuscriptID)
 
 	documentsToInsert := []ManuscriptEvent{}
 	for _, newEvent := range newEvents {

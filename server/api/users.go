@@ -43,7 +43,7 @@ func handleAccountCreation(w http.ResponseWriter, r *http.Request) *http.Request
 		return r
 	}
 	r = r.WithContext(ctx)
-	newUserID := ctx.Value(contexts.UserIDContextKey{}).(application.UserID)
+	newUserID := ctx.Value(contexts.UserIDContextKey{}).(contexts.UserID)
 	slog.Info("acount created", "user_id", newUserID)
 	helpers.WriteJson(w, CreateAccountResponseDto{
 		Id: string(newUserID),
@@ -55,7 +55,7 @@ func handlePromoteToEditor(w http.ResponseWriter, r *http.Request) *http.Request
 	slog.Info("receiving promotion to editor request")
 
 	userID := helpers.FromUrlParams(r.Context(), "userID")
-	r = r.WithContext(context.WithValue(r.Context(), contexts.UserIDContextKey{}, application.UserID(userID)))
+	r = r.WithContext(context.WithValue(r.Context(), contexts.UserIDContextKey{}, contexts.UserID(userID)))
 
 	app := middlewares.ApplicationFromRequest(r)
 	ctx, err := app.SendCommand(r.Context(), commands.PromoteUserToEditor{})

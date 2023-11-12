@@ -42,7 +42,7 @@ func (publications PublicationsHistory) For(publicationID application.Publicatio
 		contextualizedEvents = append(contextualizedEvents, application.ContextualizedEvent{
 			OriginalEvent: publicationEvent,
 			Context: application.EventContext{
-				UserID: application.UserID(nextEvent.UserID),
+				UserID: contexts.UserID(nextEvent.UserID),
 			},
 		})
 	}
@@ -59,7 +59,7 @@ func toPublicationEvent(nextDecodedEvent PublicationEvent) (events.Event, error)
 }
 
 func (publications PublicationsHistory) Append(ctx context.Context, newEvents []application.ContextualizedEvent) error {
-	userID := ctx.Value(contexts.UserIDContextKey{}).(application.UserID)
+	userID := ctx.Value(contexts.UserIDContextKey{}).(contexts.UserID)
 	publicationID := ctx.Value(contexts.PublicationIDContextKey{}).(application.PublicationID)
 
 	documentsToInsert := []PublicationEvent{}
