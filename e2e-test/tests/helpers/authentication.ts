@@ -1,8 +1,9 @@
 import { Page } from "@playwright/test";
 import { Writers } from "./writers";
+import { Navigation } from "./navigation";
 
 export class Authentication {
-    constructor(private readonly page: Page) { }
+    constructor(private readonly page: Page, private readonly navigation: Navigation) { }
 
     async givenIAmAnAuthenticatedWriter() {
         await this.authenticateAsWriter();
@@ -10,6 +11,10 @@ export class Authentication {
 
     async givenIAmAuthenticatedAsAnotherWriter() {
         await this.authenticateAsWriter(Writers.AnotherAuthor)
+    }
+
+    async whenIAuthentifyAsAnEditor() {
+        await this.authenticateAsEditor()
     }
 
     async authenticateAsWriter(writerName: string = Writers.FirstAuthor) {

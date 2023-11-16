@@ -1,5 +1,6 @@
 import { test } from "./helpers/test";
 import { Writers } from "./helpers/writers";
+
 test.describe('Submit a manuscript', () => {
   test('Submit a manuscript', async ({ Manuscripts, Authentication }) => {
     await Authentication.givenIAmAnAuthenticatedWriter()
@@ -30,7 +31,7 @@ test.describe('Submit a manuscript', () => {
     await Manuscripts.givenSubmissionOfManuscriptWasCanceled('My first novel')
     await Manuscripts.thenICannotCancelSubmissionOfManuscript('My first novel')
   })
-  
+
   test("Only the manuscript's writer can sees it", async ({ Authentication, Manuscripts }) => {
     await Authentication.givenIAmAnAuthenticatedWriter()
     await Manuscripts.givenISubmittedAManuscriptFor('My first novel')

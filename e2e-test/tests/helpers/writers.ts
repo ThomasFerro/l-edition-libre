@@ -1,4 +1,5 @@
+export type WriterName = string;
 export class Writers {
-    static FirstAuthor = "First author"
-    static AnotherAuthor = "Another author";
+    static FirstAuthor: WriterName = "First author"
+    static AnotherAuthor: WriterName = "Another author";
 }

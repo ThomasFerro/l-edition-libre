@@ -2,6 +2,7 @@ import { Page, expect } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import path from "path"
 import { Authentication } from "./authentication";
+import { WriterName } from "./writers";
 
 export type ManuscriptName = string
 export type ManuscriptUniqueIdentifier = string
@@ -9,8 +10,6 @@ export type ManuscriptStatus = "PendingReview" | "Canceled"
 
 const cancelManuscriptSubmissionLocator = '[data-test-manuscript-action="Cancel"]';
 export class Manuscripts {
-    private manuscripts: Record<ManuscriptName, ManuscriptUniqueIdentifier> = {}
-
     constructor(private readonly page: Page, private readonly authentication: Authentication) { }
 
     async givenISubmittedAManuscriptFor(manuscript: ManuscriptName) {
@@ -68,12 +67,25 @@ export class Manuscripts {
         const manuscript = this.manuscriptLocator(manuscriptName);
         await expect(manuscript.locator(cancelManuscriptSubmissionLocator)).not.toBeVisible();
     }
-    
+
     async thenICannotSeeManuscript(manuscriptName: ManuscriptName) {
         const manuscript = this.manuscriptLocator(manuscriptName);
         await expect(manuscript.locator(cancelManuscriptSubmissionLocator)).not.toBeVisible();
     }
 
+    async givenTheWriterSubmittedAManuscriptFor(author: WriterName, manuscriptName: ManuscriptName) {
+        await this.authentication.authenticateAsWriter(author);
+        await this.whenISubmitAManuscriptFor(manuscriptName);
+    }
+
+    async thenTheManuscriptsToReviewAre(manuscriptsToReview: { name: ManuscriptName; author: WriterName; }[]) {
+        for (const manuscriptToReview of manuscriptsToReview) {
+            await expect(this.page.locator(`[data-test-manuscript-to-review][data-test-manuscript-name="${manuscriptToReview.name}"][data-test-manuscript-author="${manuscriptToReview.author}"]`)).toBeVisible();
+        }
+        // TODO: Vérifier l'ordre
+    }
+
+    private manuscripts: Record<ManuscriptName, ManuscriptUniqueIdentifier> = {}
     private get(manuscriptName: ManuscriptName): ManuscriptUniqueIdentifier {
         let manuscriptIdentifier = this.manuscripts[manuscriptName]
         if (!manuscriptIdentifier) {
