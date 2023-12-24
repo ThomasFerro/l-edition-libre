@@ -21,6 +21,18 @@ func UserIdFromRequest(r *http.Request) contexts.UserID {
 	return r.Context().Value(contexts.UserIDContextKey{}).(contexts.UserID)
 }
 
+func TryExtractingUserID(next HandlerFuncReturningRequest) HandlerFuncReturningRequest {
+	return func(w http.ResponseWriter, r *http.Request) *http.Request {
+		userId, err := ExtractUserIDFromCookie(r)
+		if err != nil || userId == "" {
+			return next(w, r)
+		}
+
+		r = r.WithContext(context.WithValue(r.Context(), contexts.UserIDContextKey{}, userId))
+
+		return next(w, r)
+	}
+}
 func EnsureUserIsAuthenticatedAndExtractUserID(next HandlerFuncReturningRequest) HandlerFuncReturningRequest {
 	return func(w http.ResponseWriter, r *http.Request) *http.Request {
 		userId, err := ExtractUserIDFromCookie(r)

@@ -1,5 +1,4 @@
 import { test } from "./helpers/test";
-import { Writers } from "./helpers/writers";
 
 test.describe('Submit a manuscript', () => {
   test('Submit a manuscript', async ({ Manuscripts, Authentication }) => {

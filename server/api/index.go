@@ -4,15 +4,22 @@ import (
 	"net/http"
 
 	"github.com/ThomasFerro/l-edition-libre/api/html"
+	"github.com/ThomasFerro/l-edition-libre/api/middlewares"
 	"github.com/ThomasFerro/l-edition-libre/api/router"
+	"github.com/ThomasFerro/l-edition-libre/application"
 )
 
-func handleIndexFuncs(serveMux *http.ServeMux) {
+func handleIndexFuncs(serveMux *http.ServeMux, usersHistory application.UsersHistory) {
 	routes := []router.Route{
 		{
 			Path:    "/",
 			Method:  "GET",
 			Handler: handleIndex(),
+			Middlewares: []middlewares.Middleware{
+				middlewares.InjectContextualizedUserHistory,
+				middlewares.InjectUsersHistory(usersHistory),
+				middlewares.TryExtractingUserID,
+			},
 		},
 		{
 			Path:    "/error",
@@ -30,14 +37,17 @@ func handleIndexFuncs(serveMux *http.ServeMux) {
 
 type IndexParameters struct {
 	Authenticated bool
+	Editor        bool
 }
 
 func handleIndex() func(w http.ResponseWriter, r *http.Request) *http.Request {
 	return func(w http.ResponseWriter, r *http.Request) *http.Request {
-		isCurrentlyAuthenticated := isAuthenticated(r)
+		_, isCurrentlyAuthenticated := middlewares.TryGetUserIdFromRequest(r)
+		isAnEditor, _ := application.IsAnEditor(r.Context())
 
 		return html.RespondWithLayoutTemplate(w, r, IndexParameters{
 			Authenticated: isCurrentlyAuthenticated,
+			Editor:        isAnEditor,
 		}, html.WithFiles("index.gohtml"))
 	}
 }

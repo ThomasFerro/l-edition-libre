@@ -3,8 +3,6 @@ import { Authentication } from "./authentication";
 import { Manuscripts } from "./manuscripts";
 import { Navigation } from "./navigation";
 
-export type ApplicationPage = '/manuscripts' | '/manuscripts-to-review';
-
 export const test = base.extend<{
     Authentication: Authentication,
     Manuscripts: Manuscripts,
@@ -23,8 +21,8 @@ export const test = base.extend<{
         const navigation = new Navigation(page);
         await use(navigation)
     },
-    Manuscripts: async ({ page, Authentication }, use) => {
-        const manuscripts = new Manuscripts(page, Authentication);
+    Manuscripts: async ({ page, Authentication, Navigation }, use) => {
+        const manuscripts = new Manuscripts(page, Authentication, Navigation);
         await use(manuscripts)
     },
     Authentication: async ({ page, Navigation }, use) => {

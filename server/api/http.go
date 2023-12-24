@@ -66,7 +66,7 @@ func Start(databaseName string) *http.Server {
 
 		handleHealthCheckFuncs(serveMux, client)
 		handleDatabaseFuncs(serveMux, client)
-		handleIndexFuncs(serveMux)
+		handleIndexFuncs(serveMux, usersHistory)
 		handleManuscriptsFuncs(serveMux, app, usersHistory, publicationsHistory, manuscriptsHistory, filesSaver, jwtMiddleware)
 		handlePublicationsFuncs(serveMux, app, publicationsHistory, jwtMiddleware)
 		handleUsersFuncs(serveMux, app, usersHistory, jwtMiddleware)

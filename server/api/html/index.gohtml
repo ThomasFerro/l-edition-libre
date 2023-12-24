@@ -1,5 +1,6 @@
 {{ define "title" }}Accueil{{end}}
 {{ define "content" }}
-<a href="/manuscripts" data-test-go-to="manuscripts">Manuscrits</a>
+<a href="/manuscripts" data-test-go-to="/manuscripts">Mes manuscrits</a>
+{{ if .Editor }}<a href="/manuscripts-to-review" data-test-go-to="/manuscripts-to-review">Manuscrits à revoir</a>{{ end }}
 Bienvenue :D
 {{ end }}

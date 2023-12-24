@@ -81,11 +81,6 @@ func NewAuthenticator() (Authenticator, error) {
 
 const STATE_COOKIE_NAME = "state_cookie"
 
-func isAuthenticated(r *http.Request) bool {
-	_, err := middlewares.ExtractUserIDFromCookie(r)
-	return err == nil
-}
-
 func handleLogin(authenticator Authenticator) func(http.ResponseWriter, *http.Request) *http.Request {
 	return func(w http.ResponseWriter, r *http.Request) *http.Request {
 		state, err := generateRandomState()

@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import path from "path"
 import { Authentication } from "./authentication";
 import { WriterName } from "./writers";
+import { Navigation } from "./navigation";
 
 export type ManuscriptName = string
 export type ManuscriptUniqueIdentifier = string
@@ -10,18 +11,18 @@ export type ManuscriptStatus = "PendingReview" | "Canceled"
 
 const cancelManuscriptSubmissionLocator = '[data-test-manuscript-action="Cancel"]';
 export class Manuscripts {
-    constructor(private readonly page: Page, private readonly authentication: Authentication) { }
+    constructor(private readonly page: Page, private readonly authentication: Authentication, private readonly navigation: Navigation) { }
 
     async givenISubmittedAManuscriptFor(manuscript: ManuscriptName) {
         await this.whenISubmitAManuscriptFor(manuscript)
     }
 
     async whenIGoToTheManuscriptsPage() {
-        await this.goToManuscriptsPage()
+        await this.navigation.navigateTo('/manuscripts')
     }
 
     async whenISubmitAManuscriptFor(manuscriptName: ManuscriptName) {
-        await this.goToManuscriptsPage()
+        await this.navigation.navigateTo('/manuscripts')
         await this.page.locator('[data-test-new-manuscript-field="title"]').fill(this.get(manuscriptName));
         await this.page.locator('[data-test-new-manuscript-field="author"]').fill("Default author");
 
@@ -79,10 +80,10 @@ export class Manuscripts {
     }
 
     async thenTheManuscriptsToReviewAre(manuscriptsToReview: { name: ManuscriptName; author: WriterName; }[]) {
+        await this.navigation.navigateTo('/manuscripts-to-review');
         for (const manuscriptToReview of manuscriptsToReview) {
             await expect(this.page.locator(`[data-test-manuscript-to-review][data-test-manuscript-name="${manuscriptToReview.name}"][data-test-manuscript-author="${manuscriptToReview.author}"]`)).toBeVisible();
         }
-        // TODO: Vérifier l'ordre
     }
 
     private manuscripts: Record<ManuscriptName, ManuscriptUniqueIdentifier> = {}
@@ -103,12 +104,5 @@ export class Manuscripts {
         const manuscript = this.manuscriptLocator(manuscriptName)
         await expect(manuscript).toBeVisible();
         await expect(manuscript.locator(`[data-test-manuscript-status="${status}"]`)).toBeVisible();
-    }
-
-    private async goToManuscriptsPage() {
-        if (this.page.url().endsWith("manuscripts")) {
-            return
-        }
-        await this.page.locator('[data-test-go-to="manuscripts"]').click()
     }
 }

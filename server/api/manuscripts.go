@@ -290,7 +290,7 @@ func handleManuscriptsFuncs(
 			Handler: handleManuscriptReviewSubmission,
 		},
 		{
-			Path:   "/manuscripts/to-review",
+			Path:   "/manuscripts-to-review",
 			Method: "GET",
 			Middlewares: []middlewares.Middleware{
 				middlewares.OnlyAvailableForEditor,

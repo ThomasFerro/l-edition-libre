@@ -11,7 +11,7 @@ import (
 type ManuscriptsToReview struct{}
 
 func HandleManuscriptsToReview(ctx context.Context, query Query) (interface{}, error) {
-	historyForManuscripts := contexts.FromContext[[][]events.DecoratedEvent](ctx, contexts.ContextualizedManuscriptsHistoryContextKey{})
+	historyForManuscripts := contexts.FromContext[map[contexts.ManuscriptID][]events.DecoratedEvent](ctx, contexts.ContextualizedManuscriptsHistoryContextKey{})
 	manuscripts := make([]domain.Manuscript, 0)
 	for _, historyForManuscript := range historyForManuscripts {
 		manuscript := domain.RehydrateManuscript(events.ToEvents(historyForManuscript))
